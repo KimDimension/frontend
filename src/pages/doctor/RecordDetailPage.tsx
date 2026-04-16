@@ -1,152 +1,279 @@
-import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router";
+import { btn, card, COLOR, contentBox, table, typography } from "../../styles/doctor";
 
-/* =========================================================
-   STYLES  (기존과 동일)
-   ========================================================= */
-const S: { [key: string]: React.CSSProperties } = {
-  main:      { flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 16 },
-  headerRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
-  titleRow:  { display: "flex", alignItems: "center", gap: 12 },
-  pageTitle: { color: "#1f1f1f", fontSize: 18, fontWeight: 700, margin: 0 },
-  backBtn:   { backgroundColor: "#dbdbdb", color: "#1f1f1f", fontSize: 11, fontWeight: 700, padding: "6px 14px", border: "none", borderRadius: 6, cursor: "pointer" },
-  approveBtn:{ backgroundColor: "#2b8c47", color: "#ffffff", fontSize: 11, fontWeight: 700, padding: "10px 20px", border: "none", borderRadius: 6, cursor: "pointer" },
-  card:      { backgroundColor: "#ffffff", borderRadius: 8, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", padding: "16px 16px 20px" },
-  cardTitle: { color: "#1f1f1f", fontSize: 13, fontWeight: 700, margin: 0, marginBottom: 10 },
-  table:     { width: "100%", borderCollapse: "collapse" },
-  thDark:    { backgroundColor: "#1b508a", color: "#ffffff", fontSize: 9, fontWeight: 700, padding: "6px 10px", textAlign: "left" },
-  thLight:   { backgroundColor: "#dbdbdb", color: "#1f1f1f", fontSize: 9, fontWeight: 700, padding: "6px 10px", textAlign: "left" },
-  tdLabel:   { backgroundColor: "#f2f7ff", fontSize: 9, padding: "8px 10px", color: "#1f1f1f" },
-  tdEven:    { backgroundColor: "#ffffff", fontSize: 9, padding: "8px 10px", color: "#1f1f1f" },
-  tdOdd:     { backgroundColor: "#f7f7f7", fontSize: 9, padding: "8px 10px", color: "#1f1f1f" },
-  aiBox:     { backgroundColor: "#edf5ff", borderRadius: 4, padding: "12px 14px", fontSize: 11, color: "#1f1f1f", lineHeight: 1.7 },
-  emrBox:    { backgroundColor: "#edfff2", borderRadius: 4, padding: "12px 14px", fontSize: 10, color: "#1f1f1f", lineHeight: 2, display: "flex", flexDirection: "column", gap: 0 },
-  bottomRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
-  qaQuestion:{ color: "#8c8c8c", fontSize: 10, margin: 0, marginTop: 12 },
-  qaAnswer:  { color: "#1f1f1f", fontSize: 13, fontWeight: 700, margin: 0, marginTop: 2 },
-};
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-/* =========================================================
-   DATA  (기존과 동일)
-   ========================================================= */
-const capdRows = [
-  { label: "교환 시간",    values: ["06:00", "10:00", "14:00", "18:00", "22:00"], alt: false },
-  { label: "배액량 (g)",   values: ["1850",  "2100",  "1950",  "2050",  "-"],     alt: true  },
-  { label: "투석액 농도",  values: ["1.5%",  "2.5%",  "1.5%",  "2.5%",  "-"],     alt: false },
-  { label: "주입액 (g)",   values: ["2000",  "2000",  "2000",  "2000",  "-"],     alt: true  },
-  { label: "한외여과 (g)", values: ["-150",  "100",   "-50",   "50",    "-"],     alt: false },
-];
+/* ── 타입 ─────────────────────────────────────────────── */
+interface ExchangeRecord {
+  session_number:         number;
+  exchange_time:          string | null;
+  drainage_volume:        number | null;
+  infusion_concentration: number | null;
+  infusion_weight:        number | null;
+  ultrafiltration:        number | null;
+}
 
-const commonQA = [
-  { q: "불편한 점이 있었나요?", a: "없었음" },
-  { q: "복통/팽만감?",          a: "없었음" },
-  { q: "투석액 색 이상?",       a: "없었음" },
-];
+interface SurveyResponse {
+  question_type: string;
+  question_text: string;
+  reason:        string | null;
+  choice:        string | null;
+  text_answer:   string | null;
+}
 
-const aiQA = [
-  { q: "수분 섭취가 많았나요?", a: "약간 많이 마셨음" },
-  { q: "두통/어지러움?",        a: "약간 있었음" },
-];
+interface EMR {
+  S: string;
+  O: string;
+  A: string;
+  P: string;
+}
 
-/* =========================================================
-   COMPONENT  ← prop 없어짐, location.state에서 record 꺼냄
-   ========================================================= */
+interface RecordDetail {
+  record_id:             number;
+  patient_name:          string;
+  record_date:           string;
+  submitted_at:          string;
+  status:                string;
+  turbid_peritoneal:     boolean;
+  weight:                number | null;
+  blood_pressure:        string | null;
+  urine_count:           number | null;
+  total_ultrafiltration: number | null;
+  fasting_blood_glucose: number | null;
+  memo:                  string | null;
+  exchange_records:      ExchangeRecord[];
+  survey_responses:      SurveyResponse[];
+  ai_summary:            string;
+  emr:                   EMR;
+}
+
+/* ── 교환 기록 테이블 ─────────────────────────────────── */
+const EXCHANGE_ROWS = [
+  { label: "교환 시간",       key: "exchange_time"          },
+  { label: "배액량 (g)",      key: "drainage_volume"        },
+  { label: "투석액 농도 (%)", key: "infusion_concentration" },
+  { label: "주입액 (g)",      key: "infusion_weight"        },
+  { label: "한외여과 (g)",    key: "ultrafiltration"        },
+] as const;
+
+function ExchangeTable({ exchanges }: { exchanges: ExchangeRecord[] }) {
+  const bySession: Record<number, ExchangeRecord> = {};
+  exchanges.forEach((e) => { bySession[e.session_number] = e; });
+
+  return (
+    <table style={table.root}>
+      <thead>
+        <tr>
+          <th style={table.thDark}>구분</th>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <th key={n} style={table.thLight}>{n}회차</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {EXCHANGE_ROWS.map((row, ri) => (
+          <tr key={row.key}>
+            <td style={table.tdLabel}>{row.label}</td>
+            {[1, 2, 3, 4, 5].map((n) => {
+              const val = bySession[n]?.[row.key];
+              const display = val != null ? String(val) : "-";
+              return (
+                <td key={n} style={ri % 2 === 0 ? table.tdEven : table.tdOdd}>{display}</td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/* ── 설문 응답 섹션 ───────────────────────────────────── */
+function SurveySection({ responses, type }: { responses: SurveyResponse[]; type: "common" | "ai" }) {
+  const filtered = responses.filter((r) => r.question_type === type);
+  if (filtered.length === 0) return <p style={{ fontSize: 12, color: COLOR.textMuted }}>응답 없음</p>;
+
+  return (
+    <>
+      {filtered.map((item, i) => (
+        <div key={i}>
+          {type === "ai" && item.reason && (
+            <p style={{ fontSize: 9, color: COLOR.primary, marginTop: i === 0 ? 0 : 12, marginBottom: 2 }}>
+              💡 {item.reason}
+            </p>
+          )}
+          <p style={{ ...typography.qaQuestion, marginTop: type === "ai" ? 0 : i === 0 ? 0 : 12 }}>
+            {item.question_text}
+          </p>
+          <p style={typography.qaAnswer}>
+            {item.choice === "yes" ? "예" : item.choice === "no" ? "아니오" : "-"}
+            {item.text_answer ? ` — ${item.text_answer}` : ""}
+          </p>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* ── 메인 ─────────────────────────────────────────────── */
 export default function RecordDetailPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const record    = location.state?.record;
+  const { recordId, patientName } = (location.state ?? {}) as { recordId?: number; patientName?: string };
 
-  // 직접 URL 접근 등 record가 없을 경우 안전 처리
-  if (!record) {
+  const [detail, setDetail]   = useState<RecordDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
+  const [approving, setApproving] = useState(false);
+
+  useEffect(() => {
+    if (!recordId) return;
+    const token = localStorage.getItem("access_token");
+    if (!token) { navigate("/login"); return; }
+
+    fetch(`${API}/api/v1/records/${recordId}/detail`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 401) { localStorage.clear(); navigate("/login"); return null; }
+        if (!res.ok) throw new Error("서버 오류");
+        return res.json();
+      })
+      .then((json) => { if (json) setDetail(json); })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [recordId, navigate]);
+
+  const handleApprove = async () => {
+    if (!recordId || approving) return;
+    const token = localStorage.getItem("access_token");
+    setApproving(true);
+    try {
+      const res = await fetch(`${API}/api/v1/records/${recordId}/approve`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail ?? "승인 실패");
+        return;
+      }
+      setDetail((prev) => prev ? { ...prev, status: "reviewed" } : prev);
+    } catch {
+      alert("승인 중 오류가 발생했습니다.");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  /* 직접 URL 접근 (recordId 없음) */
+  if (!recordId) {
     return (
       <main style={{ padding: 24 }}>
         <p>기록을 찾을 수 없습니다.</p>
-        <button onClick={() => navigate("/doctor/dashboard")}>← 대시보드로</button>
+        <button onClick={() => navigate("/doctor")} style={btn.ghost}>← 대시보드로</button>
       </main>
     );
   }
+
+  if (loading) return <div style={{ padding: 24, color: COLOR.textMuted, fontSize: 13 }}>불러오는 중...</div>;
+  if (error)   return <div style={{ padding: 24, color: COLOR.danger,    fontSize: 13 }}>오류: {error}</div>;
+  if (!detail) return null;
+
+  const isApproved = detail.status === "reviewed";
+  const submitTime = new Date(detail.submitted_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <>
       <style>{`
         .back-btn:hover    { background-color: #c8c8c8 !important; }
-        .approve-btn:hover { background-color: #236e39 !important; }
+        .approve-btn:hover { background-color: ${COLOR.successDark} !important; }
       `}</style>
 
-      <main style={S.main}>
-        {/* ── Header ── */}
-        <div style={S.headerRow}>
-          <div style={S.titleRow}>
-            <h1 style={S.pageTitle}>{record.name} 환자 — {record.time}</h1>
-            <button className="back-btn" style={S.backBtn} onClick={() => navigate(-1)}>← 목록</button>
+      <main style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+
+        {/* 헤더 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <h1 style={typography.pageTitle}>
+              {detail.patient_name} 환자 — {detail.record_date} {submitTime}
+            </h1>
+            <button className="back-btn" style={btn.ghost} onClick={() => navigate(-1)}>← 목록</button>
           </div>
-          <button className="approve-btn" style={S.approveBtn}>✅ 기록 승인</button>
+          {!isApproved ? (
+            <button
+              className="approve-btn"
+              style={btn.success}
+              onClick={handleApprove}
+              disabled={approving}
+            >
+              {approving ? "처리 중..." : "✅ 기록 승인"}
+            </button>
+          ) : (
+            <span style={{ color: COLOR.success, fontWeight: 700, fontSize: 13 }}>✅ 승인 완료</span>
+          )}
         </div>
 
-        {/* 이하 기존 내용 그대로 */}
-        <div style={S.card}>
-          <p style={S.cardTitle}>CAPD 투석 기록</p>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                <th style={S.thDark}>구분</th>
-                {["1회차", "2회차", "3회차", "4회차", "5회차"].map((h) => (
-                  <th key={h} style={S.thLight}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {capdRows.map((row) => (
-                <tr key={row.label}>
-                  <td style={S.tdLabel}>{row.label}</td>
-                  {row.values.map((v, i) => (
-                    <td key={i} style={row.alt ? S.tdOdd : S.tdEven}>{v}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* CAPD 투석 기록 테이블 */}
+        <div style={card.base}>
+          <p style={typography.cardTitle}>CAPD 투석 기록</p>
+          <ExchangeTable exchanges={detail.exchange_records} />
 
-        <div style={S.card}>
-          <p style={S.cardTitle}>🤖 AI 일일 요약</p>
-          <div style={S.aiBox}>
-            총 한외여과량 -50g (평소 대비 낮음). 2.5% 투석액 사용 비중 증가. 흐린 투석액 미관찰.
-            체중 전일 대비 +0.5kg 증가. 혈압 140/90mmHg — KDIGO 기준 초과, 추가 모니터링 권장.
-          </div>
-        </div>
-
-        <div style={S.card}>
-          <p style={S.cardTitle}>📄 EMR 형식 요약</p>
-          <div style={S.emrBox}>
-            <span>S: 환자 CAPD 4회 시행. 복통 없음. 흐린 투석액 없음.</span>
-            <span>O: 체중 62.5kg (+0.5kg), 혈압 140/90mmHg, 공복혈당 108mg/dL</span>
-            <span>&nbsp;&nbsp;&nbsp;총 한외여과량 -50g / 총 배액량 7,950g</span>
-            <span>A: 한외여과 부족 가능성. 혈압 상승 주의 필요.</span>
-            <span>P: 혈압 모니터링 강화. 수분 섭취 제한 교육 권고.</span>
-          </div>
-        </div>
-
-        <div style={S.bottomRow}>
-          <div style={S.card}>
-            <p style={S.cardTitle}>💬 공통 질문 응답</p>
-            {commonQA.map((item) => (
-              <div key={item.q}>
-                <p style={S.qaQuestion}>{item.q}</p>
-                <p style={S.qaAnswer}>{item.a}</p>
+          {/* 기타 바이탈 */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px 16px", marginTop: 12 }}>
+            {[
+              { label: "복막액 혼탁",   value: detail.turbid_peritoneal ? "있음 ⚠️" : "없음" },
+              { label: "체중 (kg)",     value: detail.weight != null ? `${detail.weight} kg` : "-" },
+              { label: "혈압 (mmHg)",   value: detail.blood_pressure ?? "-" },
+              { label: "소변 횟수",     value: detail.urine_count != null ? `${detail.urine_count}회` : "-" },
+              { label: "총 한외여과량", value: detail.total_ultrafiltration != null ? `${detail.total_ultrafiltration} g` : "-" },
+              { label: "공복 혈당",     value: detail.fasting_blood_glucose != null ? `${detail.fasting_blood_glucose} mg/dL` : "-" },
+            ].map((item) => (
+              <div key={item.label}>
+                <p style={{ fontSize: 9, color: COLOR.textMuted, margin: 0 }}>{item.label}</p>
+                <p style={{ fontSize: 12, fontWeight: 600, color: COLOR.text, margin: "2px 0 0" }}>{item.value}</p>
               </div>
             ))}
           </div>
-          <div style={S.card}>
-            <p style={S.cardTitle}>🤖 AI 맞춤 질문 응답</p>
-            {aiQA.map((item) => (
-              <div key={item.q}>
-                <p style={S.qaQuestion}>{item.q}</p>
-                <p style={S.qaAnswer}>{item.a}</p>
-              </div>
-            ))}
+
+          {detail.memo && (
+            <div style={{ marginTop: 10 }}>
+              <p style={{ fontSize: 9, color: COLOR.textMuted, margin: 0 }}>메모</p>
+              <p style={{ fontSize: 12, color: COLOR.text, margin: "2px 0 0" }}>{detail.memo}</p>
+            </div>
+          )}
+        </div>
+
+        {/* AI 요약 */}
+        <div style={card.base}>
+          <p style={typography.cardTitle}>🤖 AI 일일 요약</p>
+          <div style={contentBox.ai}>{detail.ai_summary}</div>
+        </div>
+
+        {/* EMR 형식 */}
+        <div style={card.base}>
+          <p style={typography.cardTitle}>📄 EMR 형식 요약</p>
+          <div style={contentBox.emr}>
+            <span>S: {detail.emr.S}</span>
+            <span>O: {detail.emr.O}</span>
+            <span>A: {detail.emr.A}</span>
+            <span>P: {detail.emr.P}</span>
           </div>
         </div>
+
+        {/* 설문 응답 (2열) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={card.base}>
+            <p style={typography.cardTitle}>💬 공통 질문 응답</p>
+            <SurveySection responses={detail.survey_responses} type="common" />
+          </div>
+          <div style={card.base}>
+            <p style={typography.cardTitle}>🤖 AI 맞춤 질문 응답</p>
+            <SurveySection responses={detail.survey_responses} type="ai" />
+          </div>
+        </div>
+
       </main>
     </>
   );

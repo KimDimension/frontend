@@ -1,117 +1,136 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { btn, card, COLOR, STATUS_MAP, table, typography } from "../../styles/doctor";
 
-/* =========================================================
-   STYLES
-   ========================================================= */
-const S: { [key: string]: React.CSSProperties } = {
-  main:            { flex: 1, overflowY: "auto", padding: 24 },
-  pageTitle:       { color: "#1f1f1f", fontSize: 20, fontWeight: 700, margin: 0 },
-  pageSubtitle:    { color: "#8c8c8c", fontSize: 11, marginTop: 4 },
-  statsGrid:       { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, margin: "20px 0 16px" },
-  statCard:        { backgroundColor: "#ffffff", borderRadius: 8, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" },
-  statLabel:       { color: "#8c8c8c", fontSize: 11, margin: 0, marginBottom: 4 },
-  statValue:       { fontSize: 22, fontWeight: 700, margin: 0 },
-  tableCard:       { backgroundColor: "#ffffff", borderRadius: 8, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflow: "hidden" },
-  tableCardHeader: { padding: "16px 20px 8px" },
-  tableCardTitle:  { color: "#1f1f1f", fontSize: 13, fontWeight: 700, margin: 0 },
-  table:           { width: "100%", borderCollapse: "collapse" },
-  thead:           { backgroundColor: "#dbdbdb" },
-  th:              { textAlign: "left", padding: "7px 16px", fontSize: 10, fontWeight: 700, color: "#1f1f1f" },
-  td:              { padding: "13px 16px", fontSize: 12, color: "#1f1f1f" },
-  rowEven:         { backgroundColor: "#ffffff" },
-  rowOdd:          { backgroundColor: "#fafafc" },
-  badgeRed:        { color: "#cc3333", fontWeight: 700 },
-  badgeGreen:      { color: "#2b8c47", fontWeight: 700 },
-  badgeGray:       { color: "#8c8c8c", fontWeight: 700 },
-  viewBtn:         { backgroundColor: "#2e75b5", color: "#ffffff", fontSize: 11, fontWeight: 700, padding: "5px 14px", border: "none", borderRadius: 6, cursor: "pointer" },
-};
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-/* =========================================================
-   DATA
-   ========================================================= */
-const stats = [
-  { label: "오늘 제출",  value: "12건", color: "#2e75b5" },
-  { label: "미검토",     value: "5건",  color: "#cc3333" },
-  { label: "승인 완료",  value: "7건",  color: "#2b8c47" },
-  { label: "총 환자 수", value: "23명", color: "#1b508a" },
-];
-
-const records = [
-  { id: 1, name: "홍길동", time: "08:23 AM", status: "미검토",   unreviewed: "3개" },
-  { id: 2, name: "김환자", time: "09:15 AM", status: "검토 중",  unreviewed: "1개" },
-  { id: 3, name: "이복막", time: "10:02 AM", status: "승인 완료", unreviewed: "-"  },
-  { id: 4, name: "박투석", time: "10:45 AM", status: "미검토",   unreviewed: "2개" },
-  { id: 5, name: "최신장", time: "11:30 AM", status: "미검토",   unreviewed: "2개" },
-  { id: 6, name: "강신부", time: "12:10 PM", status: "승인 완료", unreviewed: "-"  },
-];
-
-/* =========================================================
-   SUB COMPONENTS
-   ========================================================= */
-function StatusBadge({ status }: { status: string }) {
-  if (status === "미검토")    return <span style={S.badgeRed}>{status}</span>;
-  if (status === "승인 완료") return <span style={S.badgeGreen}>{status}</span>;
-  return <span style={S.badgeGray}>{status}</span>;
+/* ── 타입 ─────────────────────────────────────────────── */
+interface RecordRow {
+  record_id:           number;
+  patient_name:        string;
+  submitted_at:        string;
+  status:              string;
+  unreviewed_ai_count: number;
 }
 
-/* =========================================================
-   COMPONENT  ← onView prop 없어짐, navigate 직접 사용
-   ========================================================= */
+interface DashboardData {
+  today:           string;
+  total_submitted: number;
+  pending_count:   number;
+  approved_count:  number;
+  total_patients:  number;
+  records:         RecordRow[];
+}
+
+/* ── 통계 카드 ────────────────────────────────────────── */
+function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={card.base}>
+      <p style={typography.label}>{label}</p>
+      <p style={{ ...typography.value, color }}>{value}</p>
+    </div>
+  );
+}
+
+/* ── 상태 배지 ────────────────────────────────────────── */
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_MAP[status] ?? { label: status, color: COLOR.gray };
+  return <span style={{ color: s.color, fontWeight: 700, fontSize: 12 }}>{s.label}</span>;
+}
+
+/* ── 메인 ─────────────────────────────────────────────── */
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [data, setData]       = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
 
-  const handleView = (record: typeof records[0]) => {
-    navigate("/doctor/record", { state: { record } });
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) { navigate("/login"); return; }
+
+    fetch(`${API}/api/v1/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 401) { localStorage.clear(); navigate("/login"); return null; }
+        if (!res.ok) throw new Error("서버 오류");
+        return res.json();
+      })
+      .then((json) => { if (json) setData(json); })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [navigate]);
+
+  if (loading) return <div style={{ padding: 24, color: COLOR.textMuted, fontSize: 13 }}>불러오는 중...</div>;
+  if (error)   return <div style={{ padding: 24, color: COLOR.danger,    fontSize: 13 }}>오류: {error}</div>;
+
+  const stats = [
+    { label: "오늘 제출",  value: `${data?.total_submitted ?? 0}건`, color: COLOR.primary     },
+    { label: "미검토",     value: `${data?.pending_count   ?? 0}건`, color: COLOR.danger      },
+    { label: "승인 완료",  value: `${data?.approved_count  ?? 0}건`, color: COLOR.success     },
+    { label: "총 환자 수", value: `${data?.total_patients  ?? 0}명`, color: COLOR.primaryDark },
+  ];
 
   return (
     <>
-      <style>{`.view-btn:hover { background-color: #1b508a !important; }`}</style>
+      <style>{`.view-btn:hover { background-color: ${COLOR.primaryDark} !important; }`}</style>
 
-      <main style={S.main}>
-        <div>
-          <h1 style={S.pageTitle}>대시보드</h1>
-          <p style={S.pageSubtitle}>2025년 4월 13일 기준</p>
+      <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
+        {/* 헤더 */}
+        <div style={{ marginBottom: 4 }}>
+          <h1 style={typography.pageTitle}>대시보드</h1>
+          <p style={typography.pageSubtitle}>{data?.today} 기준</p>
         </div>
 
-        <div style={S.statsGrid}>
-          {stats.map((stat) => (
-            <div key={stat.label} style={S.statCard}>
-              <p style={S.statLabel}>{stat.label}</p>
-              <p style={{ ...S.statValue, color: stat.color }}>{stat.value}</p>
-            </div>
-          ))}
+        {/* 통계 카드 4개 */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, margin: "20px 0 16px" }}>
+          {stats.map((s) => <StatCard key={s.label} {...s} />)}
         </div>
 
-        <div style={S.tableCard}>
-          <div style={S.tableCardHeader}>
-            <p style={S.tableCardTitle}>오늘 제출된 기록</p>
+        {/* 테이블 카드 */}
+        <div style={{ ...card.base, padding: 0, overflow: "hidden" }}>
+          <div style={card.header}>
+            <p style={card.title}>오늘 제출된 기록</p>
           </div>
-          <table style={S.table}>
-            <thead style={S.thead}>
+          <table style={table.root}>
+            <thead>
               <tr>
-                <th style={S.th}>환자명</th>
-                <th style={S.th}>제출 시간</th>
-                <th style={S.th}>상태</th>
-                <th style={S.th}>미검토 항목</th>
-                <th style={S.th} />
+                {["환자명", "제출 시간", "상태", "미검토 항목", ""].map((h) => (
+                  <th key={h} style={table.thGray}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {records.map((record, index) => (
-                <tr key={record.id} style={index % 2 === 0 ? S.rowEven : S.rowOdd}>
-                  <td style={S.td}>{record.name}</td>
-                  <td style={S.td}>{record.time}</td>
-                  <td style={S.td}><StatusBadge status={record.status} /></td>
-                  <td style={S.td}>{record.unreviewed}</td>
-                  <td style={S.td}>
-                    <button className="view-btn" style={S.viewBtn} onClick={() => handleView(record)}>
-                      보기
-                    </button>
+              {data?.records?.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: "20px", textAlign: "center", fontSize: 12, color: COLOR.textMuted }}>
+                    오늘 제출된 기록이 없습니다.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                data?.records?.map((row, idx) => (
+                  <tr key={row.record_id} style={idx % 2 === 0 ? table.rowEven : table.rowOdd}>
+                    <td style={table.tdNormal}>{row.patient_name}</td>
+                    <td style={table.tdNormal}>
+                      {new Date(row.submitted_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                    <td style={table.tdNormal}><StatusBadge status={row.status} /></td>
+                    <td style={table.tdNormal}>
+                      {row.unreviewed_ai_count > 0 ? `${row.unreviewed_ai_count}개` : "-"}
+                    </td>
+                    <td style={table.tdNormal}>
+                      <button
+                        className="view-btn"
+                        style={btn.primary}
+                        onClick={() => navigate("/doctor/record", { state: { recordId: row.record_id, patientName: row.patient_name } })}
+                      >
+                        보기
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
