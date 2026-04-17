@@ -1,0 +1,252 @@
+/* ── 전체 폼 ─────────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 섹션 카드 ───────────────────────────────────────────────── */
+.section {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px 16px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f1f1f;
+  margin: 0 0 12px 0;
+}
+
+/* ── 교환 기록 테이블 ─────────────────────────────────────────── */
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rowHeader {
+  background-color: #1b508a;
+  color: #fff;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 7px 8px;
+  text-align: left;
+  width: 16%;
+}
+
+.colHeader {
+  background-color: #dbdbdb;
+  color: #1f1f1f;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 7px 8px;
+  text-align: left;
+  width: 16.8%;
+}
+
+.rowLabel {
+  background-color: #f2f7ff;
+  font-size: 10px;
+  color: #1f1f1f;
+  padding: 7px 8px;
+}
+
+.cell {
+  padding: 4px 6px;
+}
+
+.cellInput {
+  width: 100%;
+  height: 30px;
+  border: 1px solid #dbdbdb;
+  border-radius: 3px;
+  padding: 0 6px;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.cellInput:focus {
+  border-color: #1b508a;
+}
+
+/* ── 기타 기록 그리드 ─────────────────────────────────────────── */
+.otherGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memoField {
+  margin-top: 16px;
+}
+
+.label {
+  font-size: 11px;
+  color: #8c8c8c;
+}
+
+/* ── 인풋 공통 ───────────────────────────────────────────────── */
+.input {
+  height: 32px;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #1b508a;
+}
+
+.readOnly {
+  background-color: #f5f5f5;
+  color: #8c8c8c;
+  cursor: default;
+}
+
+/* ── 혈압 입력 ───────────────────────────────────────────────── */
+.bpRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bpInput {
+  flex: 1;
+  height: 32px;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.bpInput:focus {
+  border-color: #1b508a;
+}
+
+.bpSlash {
+  font-size: 14px;
+  color: #8c8c8c;
+  flex-shrink: 0;
+}
+
+/* ── 복막액 혼탁 토글 ─────────────────────────────────────────── */
+.toggleRow {
+  display: flex;
+  gap: 6px;
+}
+
+.toggleBtn {
+  flex: 1;
+  height: 32px;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #8c8c8c;
+}
+
+.toggleBtn:hover {
+  border-color: #1b508a;
+  color: #1b508a;
+}
+
+.toggleActive {
+  background-color: #1b508a;
+  border-color: #1b508a;
+  color: #fff;
+  font-weight: 700;
+}
+
+.toggleActiveWarn {
+  background-color: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ── 텍스트에어리어 ───────────────────────────────────────────── */
+.textarea {
+  width: 100%;
+  height: 72px;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.textarea:focus {
+  border-color: #1b508a;
+}
+
+/* ── 제출 영역 ───────────────────────────────────────────────── */
+.submitArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-bottom: 8px;
+}
+
+.submitBtn {
+  background-color: #1b508a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  width: 220px;
+  height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submitNote {
+  font-size: 10px;
+  color: #8c8c8c;
+  margin: 0;
+}
+
+/* ── 반응형 (모바일) ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .otherGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

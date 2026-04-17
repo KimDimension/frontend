@@ -1,15 +1,16 @@
 import React from "react";
 import { createBrowserRouter, Navigate } from "react-router";
-
-import LoginPage        from "../pages/auth/LoginPage";
+import LoginPage from "../pages/auth/LoginPage";
 import { DoctorLayout } from "../pages/doctor/Layout";
-import DashboardPage    from "../pages/doctor/DashboardPage";
+import DashboardPage from "../pages/doctor/DashboardPage";
 import RecordDetailPage from "../pages/doctor/RecordDetailPage";
+import CommonQPage from "../pages/doctor/CommonQPage";
+import AIReviewPage from "../pages/doctor/AIReviewPage";
 import RecordSubmitPage from "../pages/patient/RecordSubmitPage";
-import SurveyPage       from "../pages/patient/SurveyPage";
-import SurveyDonePage   from "../pages/patient/SurveyDonePage";
+import SurveyPage from "../pages/patient/SurveyPage";
+import SurveyDonePage from "../pages/patient/SurveyDonePage";
 
-/* ── 준비 중 placeholder ─────────────────────────────── */
+// 준비 중 placeholder
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div style={{ padding: "2rem", textAlign: "center", fontFamily: "'Pretendard', 'Noto Sans KR', sans-serif" }}>
     <h2>{title}</h2>
@@ -17,49 +18,56 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
-/* ── 로그인 보호 ─────────────────────────────────────── */
+// 로그인 필요 라우트 보호
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("access_token");
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
-/* ── 의사 레이아웃 + 로그인 보호 래퍼 ──────────────── */
-function DoctorRoute({ children }: { children: React.ReactNode }) {
-  return (
-    <PrivateRoute>
-      <DoctorLayout>{children}</DoctorLayout>
-    </PrivateRoute>
-  );
-}
-
 const router = createBrowserRouter([
-  { path: "/",      element: <Navigate to="/login" replace /> },
-  { path: "/login", element: <LoginPage /> },
-
-  // ── 의사 ────────────────────────────────────────────
+  {
+    path: "/",
+    element: <Navigate to="/login" replace />,
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  // ── 의사 ──────────────────────────────────────────────────
   {
     path: "/doctor",
-    element: <DoctorRoute><DashboardPage /></DoctorRoute>,
+    element: <PrivateRoute><DoctorLayout><DashboardPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/record",
-    element: <DoctorRoute><RecordDetailPage /></DoctorRoute>,
+    element: <PrivateRoute><DoctorLayout><RecordDetailPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/common-questions",
-    element: <DoctorRoute><PlaceholderPage title="공통 질문" /></DoctorRoute>,
+    element: <PrivateRoute><DoctorLayout><CommonQPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/ai-questions",
-    element: <DoctorRoute><PlaceholderPage title="AI 맞춤 질문" /></DoctorRoute>,
+    element: <PrivateRoute><DoctorLayout><AIReviewPage /></DoctorLayout></PrivateRoute>,
   },
-
-  // ── 환자 ────────────────────────────────────────────
-  { path: "/patient",            element: <Navigate to="/patient/record" replace /> },
-  { path: "/patient/record",     element: <PrivateRoute><RecordSubmitPage /></PrivateRoute> },
-  { path: "/patient/survey",     element: <PrivateRoute><SurveyPage /></PrivateRoute> },
-  { path: "/patient/survey/done",element: <PrivateRoute><SurveyDonePage /></PrivateRoute> },
+  // ── 환자 ──────────────────────────────────────────────────
+  {
+    path: "/patient",
+    element: <Navigate to="/patient/record" replace />,
+  },
+  {
+    path: "/patient/record",
+    element: <PrivateRoute><RecordSubmitPage /></PrivateRoute>,
+  },
+  {
+    path: "/patient/survey",
+    element: <PrivateRoute><SurveyPage /></PrivateRoute>,
+  },
+  {
+    path: "/patient/survey/done",
+    element: <PrivateRoute><SurveyDonePage /></PrivateRoute>,
+  },
 ]);
 
 export default router;

@@ -1,0 +1,51 @@
+import { create } from 'zustand'
+import { login as apiLogin } from '../api/auth'
+import type { User, UserRole } from '../types'
+
+interface AuthState {
+  user: User | null
+  isLoading: boolean
+  error: string | null
+  login: (email: string, password: string) => Promise<UserRole>
+  logout: () => void
+  restoreUser: (user: User) => void
+}
+
+const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isLoading: false,
+  error: null,
+
+  login: async (email, password) => {
+    set({ isLoading: true, error: null })
+    try {
+      const data = await apiLogin(email, password)
+      localStorage.setItem('access_token', data.access_token)
+      set({
+        user: { id: data.user_id, name: data.name, role: data.role },
+        isLoading: false,
+      })
+      return data.role  // 역할에 따라 리다이렉트용
+    } catch (err: unknown) {
+      const msg =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { detail?: string } } }).response?.data?.detail === 'string'
+          ? (err as { response: { data: { detail: string } } }).response.data.detail
+          : '로그인에 실패했습니다.'
+      set({ error: msg, isLoading: false })
+      throw err
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('access_token')
+    set({ user: null, error: null })
+  },
+
+  // 페이지 새로고침 후 토큰으로 유저 복원
+  restoreUser: (user: User) => set({ user }),
+}))
+
+export default useAuthStore
