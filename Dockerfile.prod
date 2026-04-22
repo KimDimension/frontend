@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────
+#  CAPD Frontend — Production (Multi-stage)
+#
+#  Stage 1: Node로 React 빌드 (정적 파일 생성)
+#  Stage 2: nginx로 정적 파일 서빙 (가벼운 프로덕션 이미지)
+#
+#  build-arg:
+#    VITE_API_BASE_URL — 백엔드 API 주소 (빌드 시 주입 필수)
+# ─────────────────────────────────────────────────────────────
+
+# ── Stage 1: Build ────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# VITE 환경변수는 빌드 타임에 번들에 포함됨
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ── Stage 2: Serve with nginx ─────────────────────────────────
+FROM nginx:alpine
+
+# React SPA 라우팅 설정 복사
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 빌드 결과물 복사
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

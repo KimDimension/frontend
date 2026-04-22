@@ -1,0 +1,98 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # ── 1단계: CI (빌드 체크) ──────────────────────────────────
+  ci:
+    name: CI — Type Check & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (타입 체크 포함)
+        run: npm run build
+        env:
+          # CI 빌드용 더미 URL (실제 배포 이미지는 build-arg로 주입)
+          VITE_API_BASE_URL: http://localhost:8000
+
+  # ── 2단계: Docker 이미지 빌드 & Docker Hub 푸시 ────────────
+  build-and-push:
+    name: Build & Push Image
+    needs: ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/capd-frontend
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          # VITE 환경변수는 빌드 타임에 주입 (nginx 정적 서빙이므로 런타임 주입 불가)
+          build-args: |
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 3단계: 서버 배포 ──────────────────────────────────────
+  deploy:
+    name: Deploy to Server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH into server and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/capd
+
+            echo "==> Pulling latest frontend image..."
+            docker compose -f docker-compose.prod.yml pull frontend
+
+            echo "==> Restarting frontend container..."
+            docker compose -f docker-compose.prod.yml up -d --no-deps frontend
+
+            echo "==> Cleaning up old images..."
+            docker image prune -f
+
+            echo "==> Deploy complete!"
+            docker ps --filter "name=capd_frontend"
