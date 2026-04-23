@@ -25,7 +25,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
       {isAI && (
         <div style={{
           width: 32, height: 32, borderRadius: '50%',
-          backgroundColor: '#1b508a',
+          backgroundColor: 'var(--capd-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 14, flexShrink: 0,
         }}>
@@ -39,7 +39,7 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
         borderRadius: isAI ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
         backgroundColor: msg.isUrgent
           ? '#fef2f2'
-          : isAI ? '#f0f4ff' : '#1b508a',
+          : isAI ? '#f0f4ff' : 'var(--capd-primary)',
         border: msg.isUrgent ? '1.5px solid #fca5a5' : 'none',
         color: msg.isUrgent ? '#dc2626' : isAI ? '#1a1a2e' : '#fff',
         fontSize: 14,
@@ -72,7 +72,7 @@ function TypingIndicator() {
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 12 }}>
       <div style={{
         width: 32, height: 32, borderRadius: '50%',
-        backgroundColor: '#1b508a',
+        backgroundColor: 'var(--capd-primary)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 14,
       }}>
@@ -86,7 +86,7 @@ function TypingIndicator() {
         {[0, 1, 2].map(i => (
           <div key={i} style={{
             width: 6, height: 6, borderRadius: '50%',
-            backgroundColor: '#1b508a', opacity: 0.4,
+            backgroundColor: 'var(--capd-primary)', opacity: 0.4,
             animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
           }} />
         ))}
@@ -195,9 +195,9 @@ export default function ConversationPage() {
       {/* 헤더 */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, height: 56,
-        backgroundColor: '#1b508a',
+        backgroundColor: 'var(--capd-primary)',
         display: 'flex', alignItems: 'center', padding: '0 20px',
-        zIndex: 100, boxShadow: '0 2px 8px rgba(27,80,138,0.25)',
+        zIndex: 100, boxShadow: '0 2px 8px rgba(123,107,181,0.25)',
       }}>
         <button
           style={{
@@ -240,7 +240,7 @@ export default function ConversationPage() {
             <button
               style={{
                 marginTop: 16, padding: '10px 24px',
-                backgroundColor: '#1b508a', color: '#fff',
+                backgroundColor: 'var(--capd-primary)', color: '#fff',
                 border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
               }}
               onClick={() => navigate('/patient')}
@@ -322,7 +322,7 @@ export default function ConversationPage() {
                 backgroundColor: isLoading ? '#f9fafb' : '#fff',
                 transition: 'border-color 0.15s',
               }}
-              onFocus={e => { e.target.style.borderColor = '#1b508a' }}
+              onFocus={e => { e.target.style.borderColor = 'var(--capd-primary)' }}
               onBlur={e => { e.target.style.borderColor = '#d1d5db' }}
             />
             <button
@@ -330,7 +330,7 @@ export default function ConversationPage() {
               disabled={!inputText.trim() || isLoading}
               style={{
                 width: 44, height: 44, borderRadius: '50%',
-                backgroundColor: inputText.trim() && !isLoading ? '#1b508a' : '#e5e7eb',
+                backgroundColor: inputText.trim() && !isLoading ? 'var(--capd-primary)' : '#e5e7eb',
                 border: 'none', cursor: inputText.trim() && !isLoading ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 18, transition: 'background 0.15s',
@@ -355,7 +355,7 @@ export default function ConversationPage() {
           <button
             style={{
               width: '100%', maxWidth: 680, display: 'block', margin: '0 auto',
-              height: 48, backgroundColor: '#1b508a', color: '#fff',
+              height: 48, backgroundColor: 'var(--capd-primary)', color: '#fff',
               border: 'none', borderRadius: 10,
               fontSize: 14, fontWeight: 700, cursor: 'pointer',
             }}

@@ -22,11 +22,11 @@
   --radius-md:     12px;
   --radius-lg:     16px;
 
-  /* CAPD 프로토타입 디자인 토큰 (보라색) */
-  --capd-primary:       #7c3aed;
-  --capd-primary-light: #ede9fe;
-  --capd-primary-dark:  #5b21b6;
-  --capd-bg:            #f8f7ff;
+  /* CAPD 프로토타입 디자인 토큰 (메디컬 보라) */
+  --capd-primary:       #7b6bb5;
+  --capd-primary-light: #f0eefb;
+  --capd-primary-dark:  #5e5090;
+  --capd-bg:            #f8f7fc;
   --capd-border:        #e5e7eb;
 }
 

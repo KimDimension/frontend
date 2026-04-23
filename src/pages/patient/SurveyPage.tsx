@@ -49,7 +49,7 @@ function QuestionItem({ question, answer, onChange }: {
         marginBottom: 12, lineHeight: 1.5,
         paddingRight: answered ? 90 : 0,
       }}>
-        <span style={{ color: '#1b508a', fontWeight: 700, marginRight: 4 }}>Q.</span>
+        <span style={{ color: 'var(--capd-primary)', fontWeight: 700, marginRight: 4 }}>Q.</span>
         {question.question_text}
       </p>
 
@@ -60,9 +60,9 @@ function QuestionItem({ question, answer, onChange }: {
             height: 34, minWidth: 64, padding: '0 14px',
             borderRadius: 8, border: 'none', cursor: 'pointer',
             fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-            backgroundColor: answer.choice === 'yes' ? '#1b508a' : '#e5e7eb',
+            backgroundColor: answer.choice === 'yes' ? 'var(--capd-primary)' : '#e5e7eb',
             color: answer.choice === 'yes' ? '#fff' : '#374151',
-            boxShadow: answer.choice === 'yes' ? '0 2px 6px rgba(27,80,138,0.3)' : 'none',
+            boxShadow: answer.choice === 'yes' ? '0 2px 6px rgba(123,107,181,0.3)' : 'none',
           }}
           onClick={() => onChange(question.question_id, 'yes', answer.text)}
         >
@@ -75,9 +75,9 @@ function QuestionItem({ question, answer, onChange }: {
             height: 34, minWidth: 80, padding: '0 14px',
             borderRadius: 8, border: 'none', cursor: 'pointer',
             fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-            backgroundColor: answer.choice === 'no' ? '#1b508a' : '#e5e7eb',
+            backgroundColor: answer.choice === 'no' ? 'var(--capd-primary)' : '#e5e7eb',
             color: answer.choice === 'no' ? '#fff' : '#374151',
-            boxShadow: answer.choice === 'no' ? '0 2px 6px rgba(27,80,138,0.3)' : 'none',
+            boxShadow: answer.choice === 'no' ? '0 2px 6px rgba(123,107,181,0.3)' : 'none',
           }}
           onClick={() => onChange(question.question_id, 'no', answer.text)}
         >
@@ -97,8 +97,8 @@ function QuestionItem({ question, answer, onChange }: {
           value={answer.text}
           onChange={e => onChange(question.question_id, answer.choice, e.target.value)}
           onFocus={e => {
-            e.target.style.borderColor = '#1b508a'
-            e.target.style.boxShadow   = '0 0 0 3px rgba(27,80,138,0.10)'
+            e.target.style.borderColor = 'var(--capd-primary)'
+            e.target.style.boxShadow   = '0 0 0 3px rgba(123,107,181,0.10)'
           }}
           onBlur={e => {
             e.target.style.borderColor = '#e5e7eb'
@@ -213,7 +213,7 @@ export default function SurveyPage() {
       {/* 헤더 */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, height: 56,
-        backgroundColor: '#1b508a',
+        backgroundColor: 'var(--capd-primary)',
         display: 'flex', alignItems: 'center', padding: '0 20px',
         zIndex: 100, boxShadow: '0 2px 8px rgba(27,80,138,0.25)',
       }}>
@@ -244,7 +244,7 @@ export default function SurveyPage() {
             <p style={{ color: '#dc2626', fontSize: 14 }}>기록 정보가 없습니다.</p>
             <button onClick={() => navigate('/patient')} style={{
               marginTop: 16, padding: '10px 20px',
-              backgroundColor: '#1b508a', color: '#fff',
+              backgroundColor: 'var(--capd-primary)', color: '#fff',
               border: 'none', borderRadius: 8,
               fontSize: 13, fontWeight: 700, cursor: 'pointer',
             }}>목록으로</button>
@@ -280,7 +280,7 @@ export default function SurveyPage() {
             }}>
               <div style={{ marginBottom: 14 }}>
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 3, height: 14, backgroundColor: '#1b508a', borderRadius: 2, display: 'inline-block' }} />
+                  <span style={{ width: 3, height: 14, backgroundColor: 'var(--capd-primary)', borderRadius: 2, display: 'inline-block' }} />
                   공통 질문
                 </p>
                 <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 3 }}>담당 의사 선생님이 설정한 질문입니다.</p>
@@ -333,7 +333,7 @@ export default function SurveyPage() {
               <button
                 style={{
                   flex: 2, height: 48,
-                  backgroundColor: saving || !hasNewAnswers ? '#9ca3af' : '#1b508a',
+                  backgroundColor: saving || !hasNewAnswers ? '#9ca3af' : 'var(--capd-primary)',
                   color: '#fff', border: 'none', borderRadius: 10,
                   fontSize: 14, fontWeight: 700,
                   cursor: saving || !hasNewAnswers ? 'not-allowed' : 'pointer',
@@ -367,11 +367,11 @@ export default function SurveyPage() {
               <button
                 style={{
                   width: '100%', height: 52,
-                  backgroundColor: '#1b508a', color: '#fff',
+                  backgroundColor: 'var(--capd-primary)', color: '#fff',
                   border: 'none', borderRadius: 10,
                   fontSize: 15, fontWeight: 700, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  boxShadow: '0 4px 12px rgba(27,80,138,0.3)',
+                  boxShadow: '0 4px 12px rgba(123,107,181,0.3)',
                 }}
                 onClick={async () => {
                   if (hasNewAnswers) await handleSave()

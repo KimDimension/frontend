@@ -26,7 +26,7 @@ const STATUS_LABEL: Record<string, string> = {
   rejected:  '반려',
 }
 const STATUS_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
-  draft:     { bg: '#ede9fe', text: '#5b21b6', dot: '#7c3aed' },
+  draft:     { bg: '#f0ebff', text: '#7c3aed', dot: '#9b72e8' },
   submitted: { bg: '#eff6ff', text: '#2563eb', dot: '#3b82f6' },
   reviewed:  { bg: '#f0fdf4', text: '#16a34a', dot: '#22c55e' },
   rejected:  { bg: '#fef2f2', text: '#dc2626', dot: '#ef4444' },
