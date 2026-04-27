@@ -67,11 +67,11 @@ function ExchangeMini({ record }: { record: DailyRecordResponse }) {
     return <p style={{ fontSize: 12, color: C.textLight, margin: 0 }}>교환 기록 없음</p>
 
   const rows = [
-    { label: '시간',    key: 'exchange_time'          as const },
-    { label: '배액 (g)', key: 'drainage_volume'       as const },
+    { label: '시간',    key: 'exchange_time'           as const },
     { label: '농도 (%)', key: 'infusion_concentration' as const },
-    { label: '주입 (g)', key: 'infusion_weight'       as const },
-    { label: '제수 (g)', key: 'ultrafiltration'       as const },
+    { label: '주입 (g)', key: 'infusion_weight'        as const },
+    { label: '배액 (g)', key: 'drainage_volume'        as const },
+    { label: '제수 (g)', key: 'ultrafiltration'        as const },
   ]
 
   return (
@@ -235,7 +235,10 @@ export default function RecordListPage() {
         background: C.primary, display: 'flex', alignItems: 'center',
         padding: '0 20px', zIndex: 100, boxShadow: '0 2px 8px rgba(124,58,237,0.25)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          onClick={() => navigate('/patient')}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+        >
           <div style={{ width: 28, height: 28, borderRadius: 9, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fff', fontSize: 13, fontWeight: 900 }}>C</span>
           </div>
@@ -244,6 +247,16 @@ export default function RecordListPage() {
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           나의 기록
         </span>
+        {/* 로그아웃 */}
+        <button
+          onClick={() => { localStorage.clear(); navigate('/login') }}
+          style={{
+            marginLeft: 'auto', background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8,
+            color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            padding: '5px 12px', fontFamily: 'inherit',
+          }}
+        >↩ 로그아웃</button>
       </header>
 
       <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 48px' }}>

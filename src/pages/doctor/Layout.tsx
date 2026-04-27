@@ -61,7 +61,10 @@ export function DoctorLayout({ children, doctorName = 'Dr. 김의사' }: DoctorL
         {/* 로고 + 의사 프로필 */}
         <div style={{ padding: '28px 24px 20px' }}>
           {/* CAPD 로고 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+          <div
+            onClick={() => navigate('/doctor')}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, cursor: 'pointer' }}
+          >
             <div style={{
               width: 32, height: 32, borderRadius: 10,
               background: C.primary,

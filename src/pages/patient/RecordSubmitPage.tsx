@@ -170,7 +170,10 @@ export default function RecordSubmitPage() {
       >
         ← <span style={{ fontSize: 12 }}>목록</span>
       </button>
-      <span style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '-0.3px', flex: 1, textAlign: 'center' }}>오늘 기록</span>
+      <span
+        onClick={() => navigate('/patient')}
+        style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '-0.3px', flex: 1, textAlign: 'center', cursor: 'pointer' }}
+      >CAPD</span>
       <div style={{ width: 56 }} />
     </header>
   )
