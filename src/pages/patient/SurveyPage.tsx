@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import client from '../../api/client'
 
@@ -36,6 +36,89 @@ interface Answer {
 }
 
 const emptyAnswer = (): Answer => ({ choice: null, selected: [], text: '' })
+
+// ── AI 질문 로딩 스켈레톤 ─────────────────────────────────
+const AI_STEPS = [
+  'KDIGO 지침 검색 중...',
+  'AI가 기록을 분석하고 있습니다...',
+  '맞춤 질문을 생성하고 있습니다...',
+  '거의 다 됐어요!',
+]
+
+function AILoadingSkeleton() {
+  const [stepIdx, setStepIdx] = useState(0)
+  const [dots, setDots] = useState('')
+  const stepRef = useRef(0)
+
+  useEffect(() => {
+    // 단계 메시지: 8초마다 전진
+    const stepTimer = setInterval(() => {
+      stepRef.current = Math.min(stepRef.current + 1, AI_STEPS.length - 1)
+      setStepIdx(stepRef.current)
+    }, 8000)
+    // 점 애니메이션: 600ms
+    const dotTimer = setInterval(() => {
+      setDots(d => d.length >= 3 ? '' : d + '.')
+    }, 600)
+    return () => { clearInterval(stepTimer); clearInterval(dotTimer) }
+  }, [])
+
+  return (
+    <>
+      <style>{`
+        @keyframes shimmer {
+          0%   { background-position: -400px 0 }
+          100% { background-position: 400px 0 }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg) }
+        }
+        .ai-skeleton-bar {
+          border-radius: 6px;
+          background: linear-gradient(90deg, #ede9fe 25%, #ddd6fe 50%, #ede9fe 75%);
+          background-size: 400px 100%;
+          animation: shimmer 1.4s infinite linear;
+        }
+      `}</style>
+
+      {/* 상태 메시지 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        marginBottom: 16, padding: '10px 14px',
+        backgroundColor: '#f5f3ff', borderRadius: 10, border: '1px solid #ddd6fe',
+      }}>
+        <div style={{
+          width: 16, height: 16, borderRadius: '50%',
+          border: '2px solid #7c3aed', borderTopColor: 'transparent',
+          animation: 'spin 0.8s linear infinite', flexShrink: 0,
+        }} />
+        <span style={{ fontSize: 13, color: '#7c3aed', fontWeight: 600 }}>
+          {AI_STEPS[stepIdx]}{dots}
+        </span>
+      </div>
+
+      {/* 스켈레톤 카드 3개 */}
+      {[70, 55, 80].map((w, i) => (
+        <div key={i} style={{
+          padding: '16px', borderRadius: 10,
+          backgroundColor: '#f5f3ff', border: '1px solid #ede9fe',
+          marginBottom: 10,
+        }}>
+          {/* AI 추천 뱃지 스켈레톤 */}
+          <div className="ai-skeleton-bar" style={{ width: 64, height: 16, marginBottom: 10 }} />
+          {/* 질문 텍스트 스켈레톤 */}
+          <div className="ai-skeleton-bar" style={{ width: `${w}%`, height: 14, marginBottom: 6 }} />
+          <div className="ai-skeleton-bar" style={{ width: '40%', height: 14, marginBottom: 14 }} />
+          {/* 버튼 스켈레톤 */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="ai-skeleton-bar" style={{ width: 56, height: 34, borderRadius: 8 }} />
+            <div className="ai-skeleton-bar" style={{ width: 72, height: 34, borderRadius: 8 }} />
+          </div>
+        </div>
+      ))}
+    </>
+  )
+}
 
 // ── 공통 질문 컴포넌트 (타입별 렌더) ─────────────────────
 function CommonQuestionItem({ question, answer, onChange }: {
@@ -653,10 +736,7 @@ export default function SurveyPage() {
                 <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 3 }}>오늘 기록을 바탕으로 AI가 생성한 질문입니다.</p>
               </div>
               {aiPending ? (
-                <div style={{ textAlign: 'center', padding: '20px 0', color: '#9ca3af', fontSize: 13 }}>
-                  <span style={{ display: 'block', marginBottom: 6, fontSize: 20 }}>🤖</span>
-                  AI가 질문을 생성하고 있습니다...
-                </div>
+                <AILoadingSkeleton />
               ) : aiQs.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '20px 0', color: '#9ca3af', fontSize: 13 }}>
                   오늘 기록에 특이사항이 없어 AI 추천 질문이 없습니다.
