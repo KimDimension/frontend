@@ -491,7 +491,7 @@ export default function DashboardPage() {
     return '해당 날짜에 데이터가 없습니다'
   }
 
-  /* ── 공통 렌더 조각 ── */
+  /* ── 공통 SearchBar ── */
   const SearchBar = (
     <div style={{ position: 'relative' }}>
       <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: C.textMuted, pointerEvents: 'none' }}>🔍</span>
@@ -551,130 +551,143 @@ export default function DashboardPage() {
     </div>
   )
 
-  const SidePanel = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>📅 날짜 선택</div>
-        <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
+  /* ─────────── 통합 렌더 ─────────── */
+  const pad = isMobile ? '16px' : '28px 32px'
+
+  /* 환자 목록 (테이블 or 카드) */
+  const PatientList = error ? (
+    <div style={{ padding: '20px 16px', color: C.danger, fontSize: 13, background: '#fff', borderRadius: 14, border: `1px solid ${C.border}` }}>
+      오류: {error}
+    </div>
+  ) : isMobile ? (
+    /* ── 카드 ── */
+    displayPatients.length === 0 ? (
+      <div style={{ padding: '32px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13, background: '#fff', borderRadius: 12, border: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: 28, marginBottom: 8 }}>{isSearchMode ? '🔍' : '📋'}</div>
+        {loading ? '불러오는 중...' : emptyMessage()}
       </div>
-      {!isSearchMode && (
-        <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>
-            🎯 위험도 분포
-            <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 5 }}>AI 분석 {allRecords.filter(r => r.risk_level).length}명</span>
-          </div>
-          <RiskBar records={allRecords} />
-        </div>
-      )}
-      {!isSearchMode && (
-        <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>📊 기록 제출율</div>
-          <SubmitGauge submitted={totalSubmitted} total={totalPatients} />
-        </div>
-      )}
+    ) : (
+      <>{displayPatients.map(p => {
+        const rec = recordMap.get(p.id) ?? null
+        return (
+          <PatientCard
+            key={p.id}
+            patient={p}
+            record={rec}
+            searchQuery={searchQuery}
+            onCardClick={() => {
+              if (rec) navigate('/doctor/record', { state: { recordId: rec.record_id, patientName: p.name } })
+            }}
+            onNameClick={e => {
+              e.stopPropagation()
+              navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } })
+            }}
+          />
+        )
+      })}</>
+    )
+  ) : (
+    /* ── 테이블 ── */
+    <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '13%'  }} />
+          <col style={{ width: '9%'   }} />
+          <col style={{ width: '14%'  }} />
+          <col style={{ width: '10%'  }} />
+          <col style={{ width: '10%'  }} />
+          <col style={{ width: '9%'   }} />
+          <col style={{ width: '35%'  }} />
+        </colgroup>
+        <thead>
+          <tr style={{ background: C.bg }}>
+            {['환자명', '환자번호', '전화번호', '상태', '위험도', 'AI 질문', 'AI 요약'].map((h, i) => (
+              <th key={i} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.textMuted, whiteSpace: 'nowrap' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {displayPatients.length === 0 ? (
+            <tr>
+              <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>{isSearchMode ? '🔍' : '📋'}</div>
+                {loading ? '불러오는 중...' : emptyMessage()}
+              </td>
+            </tr>
+          ) : displayPatients.map(p => {
+            const rec = recordMap.get(p.id) ?? null
+            const hasRecord = !!rec
+            return (
+              <tr
+                key={p.id}
+                style={{
+                  borderTop: `1px solid ${C.border}`,
+                  background: hoveredRow === p.id ? C.bg : '#fff',
+                  transition: 'background 0.1s',
+                  cursor: hasRecord ? 'pointer' : 'default',
+                }}
+                onMouseEnter={() => setHoveredRow(p.id)}
+                onMouseLeave={() => setHoveredRow(null)}
+                onClick={() => {
+                  if (hasRecord) navigate('/doctor/record', { state: { recordId: rec!.record_id, patientName: p.name } })
+                }}
+              >
+                <td style={{ padding: '12px 12px', fontWeight: 700, fontSize: 14 }}
+                  onClick={e => { e.stopPropagation(); navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } }) }}>
+                  <span style={{ color: C.primaryDark, cursor: 'pointer', borderBottom: `1px dashed ${C.primaryDark}60`, paddingBottom: 1 }}>
+                    <Highlight text={p.name} query={searchQuery} />
+                  </span>
+                </td>
+                <td style={{ padding: '12px 12px' }}>
+                  <span style={{ fontSize: 11, background: C.bg, color: C.textMuted, borderRadius: 5, padding: '2px 7px', fontWeight: 600 }}>
+                    #{String(p.id).padStart(4, '0')}
+                  </span>
+                </td>
+                <td style={{ padding: '12px 12px', fontSize: 12, color: C.textMuted }}>{p.phone_number}</td>
+                <td style={{ padding: '12px 12px' }}>
+                  {rec ? <StatusBadge status={rec.status} /> : (
+                    <span style={{ background: '#f3f4f6', color: C.textMuted, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 600 }}>미제출</span>
+                  )}
+                </td>
+                <td style={{ padding: '12px 12px' }}><RiskBadge level={rec?.risk_level ?? null} /></td>
+                <td style={{ padding: '12px 12px' }}>
+                  {rec && rec.unreviewed_ai_count > 0 ? (
+                    <span onClick={e => { e.stopPropagation(); navigate('/doctor/ai-questions') }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: C.warningLight, color: C.warning, border: `1px solid #fcd34d`, borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      ⚡ {rec.unreviewed_ai_count}건
+                    </span>
+                  ) : <span style={{ fontSize: 12, color: C.textLight }}>—</span>}
+                </td>
+                <td style={{ padding: '12px 12px' }}>
+                  {rec?.ai_summary ? (
+                    <p style={{ margin: 0, fontSize: 11, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {rec.ai_summary.trim().startsWith('{')
+                        ? (() => { try { return JSON.parse(rec.ai_summary).ai_summary ?? rec.ai_summary } catch { return rec.ai_summary.replace(/\{.*?"ai_summary"\s*:\s*"/, '').slice(0, 120) } })()
+                        : rec.ai_summary}
+                    </p>
+                  ) : <span style={{ fontSize: 12, color: C.textLight }}>—</span>}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 
-  /* ─────────── 모바일 렌더 ─────────── */
-  if (isMobile) {
-    return (
-      <main style={{ padding: '16px', minHeight: '100vh' }}>
-
-        {/* 헤더 */}
-        <div style={{ marginBottom: 16 }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: C.text, letterSpacing: '-0.04em' }}>대시보드</h1>
-          <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{formatDateKo(currentDate)}</div>
-        </div>
-
-        {/* 통계 카드 (2×2 그리드) */}
-        {!isSearchMode && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-            <StatCard icon="📋" label="제출된 기록" value={totalSubmitted} sub="건" />
-            <StatCard icon="🔍" label="미검토" value={pendingCount} sub="건" color={pendingCount > 0 ? C.warning : undefined} />
-            <StatCard icon="✅" label="승인 완료" value={approvedCount} sub="건" color={C.success} />
-            <StatCard icon="👥" label="총 환자 수" value={totalPatients} sub="명" />
-          </div>
-        )}
-
-        {/* 검색 + 필터 */}
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ marginBottom: 8 }}>{SearchBar}</div>
-          {FilterTabs}
-        </div>
-
-        {/* 검색 모드 배너 */}
-        {isSearchMode && (
-          <div style={{
-            background: C.primaryLight, border: `1px solid ${C.primaryDark}20`,
-            borderRadius: 10, padding: '8px 12px', marginBottom: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div style={{ fontSize: 12, color: C.primaryDark }}>
-              {isCombinedMode
-                ? <><b>{toDateStr(currentDate)}</b> · <b>"{searchQuery}"</b> {searchFiltered.length}명</>
-                : <><b>"{searchQuery}"</b> {searchFiltered.length}명 (오늘 기준)</>
-              }
-            </div>
-            <button onClick={() => { setSearchQuery(''); setStatusFilter('all') }}
-              style={{ fontSize: 12, color: C.primaryDark, background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600 }}>✕</button>
-          </div>
-        )}
-
-        {/* 제목 + 로딩 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted }}>{tableTitle()}</span>
-          {loading && <span style={{ fontSize: 11, color: C.textLight }}>⏳ 불러오는 중...</span>}
-        </div>
-
-        {/* 환자 카드 목록 */}
-        {error ? (
-          <div style={{ padding: '16px', color: C.danger, fontSize: 13, background: '#fff', borderRadius: 12, border: `1px solid ${C.border}` }}>
-            오류: {error}
-          </div>
-        ) : displayPatients.length === 0 ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13, background: '#fff', borderRadius: 12, border: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>{isSearchMode ? '🔍' : '📋'}</div>
-            {loading ? '불러오는 중...' : emptyMessage()}
-          </div>
-        ) : displayPatients.map(p => {
-          const rec = recordMap.get(p.id) ?? null
-          return (
-            <PatientCard
-              key={p.id}
-              patient={p}
-              record={rec}
-              searchQuery={searchQuery}
-              onCardClick={() => {
-                if (rec) navigate('/doctor/record', { state: { recordId: rec.record_id, patientName: p.name } })
-              }}
-              onNameClick={e => {
-                e.stopPropagation()
-                navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } })
-              }}
-            />
-          )
-        })}
-
-        {/* 하단 사이드 패널 (캘린더/통계) */}
-        <div style={{ marginTop: 16 }}>{SidePanel}</div>
-
-      </main>
-    )
-  }
-
-  /* ─────────── 데스크톱 렌더 ─────────── */
+  /* ─────────── return ─────────── */
   return (
-    <main style={{ padding: '28px 32px', minHeight: '100vh' }}>
+    <main style={{ padding: pad, minHeight: '100vh' }}>
 
-      {/* ── 헤더 ── */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: C.text, letterSpacing: '-0.04em' }}>대시보드</h1>
-        <div style={{ fontSize: 13, color: C.textMuted, marginTop: 3 }}>{formatDateKo(currentDate)}</div>
+      {/* 헤더 */}
+      <div style={{ marginBottom: isMobile ? 14 : 20 }}>
+        <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 900, color: C.text, letterSpacing: '-0.04em' }}>대시보드</h1>
+        <div style={{ fontSize: isMobile ? 12 : 13, color: C.textMuted, marginTop: 3 }}>{formatDateKo(currentDate)}</div>
       </div>
 
-      {/* ── 통계 카드 ── */}
+      {/* 통계 카드 */}
       {!isSearchMode && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 22 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 12, marginBottom: isMobile ? 14 : 20 }}>
           <StatCard icon="📋" label="제출된 기록" value={totalSubmitted} sub="건" />
           <StatCard icon="🔍" label="미검토" value={pendingCount} sub="건" color={pendingCount > 0 ? C.warning : undefined} />
           <StatCard icon="✅" label="승인 완료" value={approvedCount} sub="건" color={C.success} />
@@ -682,268 +695,71 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── 검색 모드 배너 ── */}
-      {isSearchMode && (
-        <div style={{
-          background: C.primaryLight, border: `1px solid ${C.primaryDark}20`,
-          borderRadius: 10, padding: '10px 16px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div style={{ fontSize: 13, color: C.primaryDark }}>
-            {isCombinedMode
-              ? <>📅 <b>{toDateStr(currentDate)}</b> · 🔍 <b>"{searchQuery}"</b> 검색 중 — {searchFiltered.length}명 일치</>
-              : <>🔍 <b>"{searchQuery}"</b> 검색 중 — 오늘 기준, {searchFiltered.length}명 일치</>
-            }
-          </div>
-          <button
-            onClick={() => { setSearchQuery(''); setStatusFilter('all') }}
-            style={{ fontSize: 12, color: C.primaryDark, background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '2px 6px' }}
-          >✕ 검색 초기화</button>
-        </div>
-      )}
+      {/* ── 위젯 행: 달력 + 위험도 + 제출율 ──
+          flex-wrap 덕분에 공간이 충분하면 한 줄,
+          좁아지면 달력 혼자 첫 줄 / 나머지 둘이 두 번째 줄 자동 배치 */}
+      {!isSearchMode && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: isMobile ? 14 : 20, alignItems: 'flex-start' }}>
 
-      {/* ── 2열 레이아웃 ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 268px', gap: 20, alignItems: 'start' }}>
-
-        {/* ── 좌: 환자 테이블 ── */}
-        <div>
-
-          {/* 테이블 상단 바 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-
-            {/* 검색 인풋 */}
-            <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
-              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: C.textMuted, pointerEvents: 'none' }}>🔍</span>
-              <input
-                ref={searchRef}
-                value={searchQuery}
-                onChange={e => { setSearchQuery(e.target.value); setStatusFilter('all') }}
-                placeholder="환자 이름 검색..."
-                style={{
-                  width: '100%', paddingLeft: 32, paddingRight: searchQuery ? 32 : 12,
-                  paddingTop: 8, paddingBottom: 8,
-                  border: `1px solid ${searchQuery ? 'var(--capd-primary)' : C.border}`,
-                  borderRadius: 9, fontSize: 13, outline: 'none',
-                  background: '#fff', color: C.text, fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                  boxShadow: searchQuery ? '0 0 0 3px var(--capd-primary-light)' : 'none',
-                  transition: 'all 0.15s',
-                }}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => { setSearchQuery(''); setStatusFilter('all'); searchRef.current?.focus() }}
-                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, fontSize: 14, padding: 0 }}
-                >✕</button>
-              )}
-            </div>
-
-            {/* 상태 필터 탭 */}
-            <div style={{ display: 'flex', gap: 4 }}>
-              {FILTER_TABS.map(tab => {
-                const active = statusFilter === tab.key
-                const cnt = tabCounts[tab.key]
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setStatusFilter(tab.key)}
-                    style={{
-                      padding: '6px 11px', borderRadius: 8, border: `1px solid ${active ? 'var(--capd-primary)' : C.border}`,
-                      background: active ? 'var(--capd-primary)' : '#fff',
-                      color: active ? '#fff' : C.textMuted,
-                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      fontFamily: 'inherit', transition: 'all 0.12s',
-                      display: 'flex', alignItems: 'center', gap: 5,
-                    }}
-                  >
-                    {tab.label}
-                    <span style={{
-                      fontSize: 10, fontWeight: 700,
-                      background: active ? 'rgba(255,255,255,0.25)' : C.bg,
-                      color: active ? '#fff' : C.textMuted,
-                      borderRadius: 10, padding: '1px 5px',
-                    }}>{cnt}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* 테이블 제목 + 로딩 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted }}>{tableTitle()}</span>
-              {loading && <span style={{ fontSize: 11, color: C.textLight }}>⏳</span>}
-            </div>
-          </div>
-
-          {/* 테이블 */}
-          {error ? (
-            <div style={{ padding: '20px 16px', color: C.danger, fontSize: 13, background: '#fff', borderRadius: 14, border: `1px solid ${C.border}` }}>
-              오류: {error}
-            </div>
-          ) : (
-            <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                <colgroup>
-                  <col style={{ width: '13%'  }} />{/* 환자명 */}
-                  <col style={{ width: '9%'   }} />{/* 환자번호 */}
-                  <col style={{ width: '14%'  }} />{/* 전화번호 */}
-                  <col style={{ width: '10%'  }} />{/* 상태 */}
-                  <col style={{ width: '10%'  }} />{/* 위험도 */}
-                  <col style={{ width: '9%'   }} />{/* AI 질문 */}
-                  <col style={{ width: '35%'  }} />{/* AI 요약 */}
-                </colgroup>
-                <thead>
-                  <tr style={{ background: C.bg }}>
-                    {['환자명', '환자번호', '전화번호', '상태', '위험도', 'AI 질문', 'AI 요약'].map((h, i) => (
-                      <th key={i} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.textMuted, whiteSpace: 'nowrap' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayPatients.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>
-                        <div style={{ fontSize: 28, marginBottom: 8 }}>
-                          {isSearchMode ? '🔍' : '📋'}
-                        </div>
-                        {loading ? '불러오는 중...' : emptyMessage()}
-                      </td>
-                    </tr>
-                  ) : displayPatients.map(p => {
-                    const rec = recordMap.get(p.id) ?? null
-                    const hasRecord = !!rec
-
-                    return (
-                      <tr
-                        key={p.id}
-                        style={{
-                          borderTop: `1px solid ${C.border}`,
-                          background: hoveredRow === p.id ? C.bg : '#fff',
-                          transition: 'background 0.1s',
-                          cursor: hasRecord ? 'pointer' : 'default',
-                        }}
-                        onMouseEnter={() => setHoveredRow(p.id)}
-                        onMouseLeave={() => setHoveredRow(null)}
-                        onClick={() => {
-                          if (hasRecord) navigate('/doctor/record', { state: { recordId: rec!.record_id, patientName: p.name } })
-                        }}
-                      >
-                        {/* 환자명 — 클릭 시 전체 기록 이동 */}
-                        <td
-                          style={{ padding: '12px 12px', fontWeight: 700, fontSize: 14 }}
-                          onClick={e => {
-                            e.stopPropagation()
-                            navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } })
-                          }}
-                        >
-                          <span style={{
-                            color: C.primaryDark, cursor: 'pointer',
-                            borderBottom: `1px dashed ${C.primaryDark}60`,
-                            paddingBottom: 1,
-                          }}>
-                            <Highlight text={p.name} query={searchQuery} />
-                          </span>
-                        </td>
-
-                        {/* 환자번호 */}
-                        <td style={{ padding: '12px 12px' }}>
-                          <span style={{ fontSize: 11, background: C.bg, color: C.textMuted, borderRadius: 5, padding: '2px 7px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                            #{String(p.id).padStart(4, '0')}
-                          </span>
-                        </td>
-
-                        {/* 전화번호 */}
-                        <td style={{ padding: '12px 12px', fontSize: 12, color: C.textMuted }}>{p.phone_number}</td>
-
-                        {/* 상태 */}
-                        <td style={{ padding: '12px 12px' }}>
-                          {rec ? <StatusBadge status={rec.status} /> : (
-                            <span style={{ background: '#f3f4f6', color: C.textMuted, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 600 }}>미제출</span>
-                          )}
-                        </td>
-
-                        {/* 위험도 */}
-                        <td style={{ padding: '12px 12px' }}>
-                          <RiskBadge level={rec?.risk_level ?? null} />
-                        </td>
-
-                        {/* 미검토 AI 질문 수 */}
-                        <td style={{ padding: '12px 12px' }}>
-                          {rec && rec.unreviewed_ai_count > 0 ? (
-                            <span
-                              onClick={e => { e.stopPropagation(); navigate('/doctor/ai-questions') }}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: C.warningLight, color: C.warning, border: `1px solid #fcd34d`, borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
-                            >⚡ {rec.unreviewed_ai_count}건</span>
-                          ) : (
-                            <span style={{ fontSize: 12, color: C.textLight }}>—</span>
-                          )}
-                        </td>
-
-                        {/* AI 요약 */}
-                        <td style={{ padding: '12px 12px' }}>
-                          {rec?.ai_summary ? (
-                            <p style={{ margin: 0, fontSize: 11, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {rec.ai_summary.trim().startsWith('{')
-                                ? (() => { try { return JSON.parse(rec.ai_summary).ai_summary ?? rec.ai_summary } catch { return rec.ai_summary.replace(/\{.*?"ai_summary"\s*:\s*"/, '').slice(0, 120) } })()
-                                : rec.ai_summary}
-                            </p>
-                          ) : (
-                            <span style={{ fontSize: 12, color: C.textLight }}>—</span>
-                          )}
-                        </td>
-
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* ── 우: 사이드 패널 ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-          {/* 캘린더 */}
-          <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+          {/* 달력 */}
+          <div style={{ flex: '1 1 220px', background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>📅 날짜 선택</div>
             <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
           </div>
 
           {/* 위험도 분포 */}
-          {!isSearchMode && (
-            <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>
-                🎯 위험도 분포
-                <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 5 }}>AI 분석 {allRecords.filter(r => r.risk_level).length}명</span>
-              </div>
-              <RiskBar records={allRecords} />
+          <div style={{ flex: '1 1 160px', background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>
+              🎯 위험도 분포
+              <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 400, marginLeft: 5 }}>AI 분석 {allRecords.filter(r => r.risk_level).length}명</span>
             </div>
-          )}
+            <RiskBar records={allRecords} />
+          </div>
 
-          {/* 제출율 */}
-          {!isSearchMode && (
-            <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>📊 기록 제출율</div>
-              <SubmitGauge submitted={totalSubmitted} total={totalPatients} />
-            </div>
-          )}
-
-          {/* 검색 모드일 때: 안내 패널 */}
-          {isSearchMode && (
-            <div style={{ background: C.primaryLight, borderRadius: 14, border: `1px solid ${C.primaryDark}20`, padding: '14px' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.primaryDark, marginBottom: 8 }}>💡 검색 팁</div>
-              <div style={{ fontSize: 11, color: C.primaryDark, lineHeight: 1.7 }}>
-                • 환자 이름으로 필터링됩니다<br />
-                • <b>전체 기록</b> 버튼으로 해당 환자의 모든 기록을 확인할 수 있어요<br />
-                • 캘린더로 날짜를 선택하면 그 날의 기록을 함께 확인할 수 있어요<br />
-                • <b>환자번호(#0001)</b>로 동명이인을 구별하세요
-              </div>
-            </div>
-          )}
+          {/* 기록 제출율 */}
+          <div style={{ flex: '1 1 160px', background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>📊 기록 제출율</div>
+            <SubmitGauge submitted={totalSubmitted} total={totalPatients} />
+          </div>
 
         </div>
+      )}
+
+      {/* 검색 모드 배너 */}
+      {isSearchMode && (
+        <div style={{
+          background: C.primaryLight, border: `1px solid ${C.primaryDark}20`,
+          borderRadius: 10, padding: '10px 16px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: isMobile ? 12 : 13, color: C.primaryDark }}>
+            {isCombinedMode
+              ? <>📅 <b>{toDateStr(currentDate)}</b> · 🔍 <b>"{searchQuery}"</b> — {searchFiltered.length}명 일치</>
+              : <>🔍 <b>"{searchQuery}"</b> — 오늘 기준, {searchFiltered.length}명 일치</>
+            }
+          </div>
+          <button onClick={() => { setSearchQuery(''); setStatusFilter('all') }}
+            style={{ fontSize: 12, color: C.primaryDark, background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '2px 6px', flexShrink: 0 }}>
+            ✕ 초기화
+          </button>
+        </div>
+      )}
+
+      {/* 검색 + 필터 + 제목 */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+          <div style={{ flex: 1, minWidth: 160 }}>{SearchBar}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted, whiteSpace: 'nowrap' }}>{tableTitle()}</span>
+            {loading && <span style={{ fontSize: 11, color: C.textLight }}>⏳</span>}
+          </div>
+        </div>
+        {FilterTabs}
       </div>
+
+      {/* 환자 목록 */}
+      {PatientList}
+
     </main>
   )
 }
