@@ -303,16 +303,13 @@ export default function DashboardPage() {
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
     const dp = toDateStr(targetDate)
-    Promise.all([
-      fetch(`${API}/api/v1/patients`,                    { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } }),
-    ])
-      .then(async ([pRes, dRes]) => {
-        if (pRes.status === 401 || dRes.status === 401) { localStorage.clear(); navigate('/login'); return }
-        if (!pRes.ok || !dRes.ok) throw new Error('서버 오류')
-        const [pData, dData] = await Promise.all([pRes.json(), dRes.json()])
-        setPatients(pData as PatientInfo[])
-        setStats(dData as DashboardStats)
+    fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(async (dRes) => {
+        if (dRes.status === 401) { localStorage.clear(); navigate('/login'); return }
+        if (!dRes.ok) throw new Error('서버 오류')
+        const dData: DashboardStats = await dRes.json()
+        setPatients(dData.patients)
+        setStats(dData)
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -358,7 +355,7 @@ export default function DashboardPage() {
   )
 
   /* ── 통계 ── */
-  const totalPatients  = patients.length
+  const totalPatients  = stats?.total_patients ?? 0
   const totalSubmitted = stats?.total_submitted ?? 0
   const pendingCount   = stats?.pending_count   ?? 0
   const approvedCount  = stats?.approved_count  ?? 0
