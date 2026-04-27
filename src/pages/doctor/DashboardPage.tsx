@@ -230,7 +230,7 @@ function MiniCalendar({ selectedDate, onSelect }: { selectedDate: Date; onSelect
       {/* 날짜 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
         {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} />
+          if (!day) return <div key={`e-${idx}`} style={{ height: 26 }} />
           const cd   = new Date(vy, vm, day)
           const cs   = toDateStr(cd)
           const fut  = isFuture(cd)
@@ -240,12 +240,13 @@ function MiniCalendar({ selectedDate, onSelect }: { selectedDate: Date; onSelect
           const sat  = idx % 7 === 6
           return (
             <button key={day} disabled={fut} onClick={() => !fut && onSelect(cd)} style={{
-              width: '100%', aspectRatio: '1', border: 'none', borderRadius: 6,
-              fontSize: 11, fontWeight: sel || tod ? 700 : 400,
+              width: '100%', height: 26, border: 'none', borderRadius: 5,
+              fontSize: 10, fontWeight: sel || tod ? 700 : 400,
               cursor: fut ? 'default' : 'pointer',
               background: sel ? 'var(--capd-primary)' : tod ? 'var(--capd-primary-light)' : 'transparent',
               color: sel ? '#fff' : fut ? '#d1d5db' : tod ? 'var(--capd-primary-dark)' : sun ? '#ef4444' : sat ? '#3b82f6' : C.text,
               fontFamily: 'inherit', transition: 'background 0.1s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{day}</button>
           )
         })}
@@ -699,7 +700,7 @@ export default function DashboardPage() {
           flex-wrap 덕분에 공간이 충분하면 한 줄,
           좁아지면 달력 혼자 첫 줄 / 나머지 둘이 두 번째 줄 자동 배치 */}
       {!isSearchMode && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: isMobile ? 14 : 20, alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: isMobile ? 14 : 20, alignItems: 'stretch' }}>
 
           {/* 달력 */}
           <div style={{ flex: '1 1 220px', background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>

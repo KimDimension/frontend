@@ -660,7 +660,7 @@ export default function SurveyPage() {
         <div style={{ width: 56 }} />
       </header>
 
-      <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 100px' }}>
+      <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 160px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <p style={{ color: '#9ca3af', fontSize: 14 }}>⏳ 질문을 불러오는 중...</p>
