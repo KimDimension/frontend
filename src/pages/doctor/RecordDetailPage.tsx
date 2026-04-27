@@ -161,6 +161,24 @@ function SurveySection({ responses, type }: { responses: SurveyResponse[]; type:
   )
 }
 
+/* ── AI 요약 파싱 헬퍼 (DB에 JSON 문자열이 저장된 경우 대응) ── */
+function parseAiSummary(raw: string): string {
+  if (!raw) return ''
+  const trimmed = raw.trim()
+  // JSON 형태로 시작하면 파싱 시도
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (parsed.ai_summary) return parsed.ai_summary
+    } catch {
+      // 파싱 실패 시 regex로 ai_summary 값 추출 시도
+      const m = trimmed.match(/"ai_summary"\s*:\s*"([\s\S]*?)"(?:\s*,|\s*\})/)
+      if (m) return m[1].replace(/\\n/g, '\n')
+    }
+  }
+  return trimmed
+}
+
 /* ── 메인 ── */
 export default function RecordDetailPage() {
   const navigate = useNavigate()
@@ -329,7 +347,7 @@ export default function RecordDetailPage() {
           <div style={{ fontWeight: 800, fontSize: 14, color: C.primaryDark, marginBottom: 12 }}>
             ✦ AI 요약 ({detail.patient_name})
           </div>
-          <div style={{ fontSize: 13, color: C.primaryDark, lineHeight: 1.8 }}>{detail.ai_summary}</div>
+          <div style={{ fontSize: 13, color: C.primaryDark, lineHeight: 1.8 }}>{parseAiSummary(detail.ai_summary)}</div>
         </Card>
       </div>
 
