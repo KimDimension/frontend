@@ -160,10 +160,10 @@ export default function RecordForm({
   // ── 셀 인풋 공통 스타일 ────────────────────────────────────────
   const cellInputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '7px 6px',
+    padding: '6px 2px',
     border: `1px solid ${C.border}`,
-    borderRadius: 7,
-    fontSize: 13,
+    borderRadius: 6,
+    fontSize: 12,
     textAlign: 'center',
     fontFamily: 'inherit',
     color: C.text,
@@ -173,8 +173,8 @@ export default function RecordForm({
   }
 
   const thStyle: React.CSSProperties = {
-    padding: '10px 8px',
-    fontSize: 12,
+    padding: '9px 4px',
+    fontSize: 11,
     fontWeight: 700,
     color: '#fff',
     background: C.primary,
@@ -183,21 +183,19 @@ export default function RecordForm({
   }
 
   const tdLabelStyle: React.CSSProperties = {
-    padding: '10px 12px',
-    fontSize: 12,
+    padding: '9px 8px',
+    fontSize: 11,
     fontWeight: 600,
     color: C.textMuted,
     background: C.bg,
     borderRight: `1px solid ${C.border}`,
     whiteSpace: 'nowrap',
-    minWidth: 90,
   }
 
   const tdCellStyle: React.CSSProperties = {
-    padding: '7px 6px',
+    padding: '5px 3px',
     borderRight: `1px solid ${C.border}`,
     textAlign: 'center',
-    minWidth: 70,
   }
 
   const tdUFStyle = (val: number | undefined): React.CSSProperties => ({
@@ -221,11 +219,19 @@ export default function RecordForm({
         <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${C.border}` }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.text }}>투석 교환 기록</h2>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 400 }}>
+        <div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '18%' }} />{/* 항목 */}
+              <col style={{ width: '16.4%' }} />{/* 1회차 */}
+              <col style={{ width: '16.4%' }} />{/* 2회차 */}
+              <col style={{ width: '16.4%' }} />{/* 3회차 */}
+              <col style={{ width: '16.4%' }} />{/* 4회차 */}
+              <col style={{ width: '16.4%' }} />{/* 5회차 */}
+            </colgroup>
             <thead>
               <tr>
-                <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 12 }}>항목</th>
+                <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 10 }}>항목</th>
                 {SESSIONS.map(n => (
                   <th key={n} style={thStyle}>{n}회차</th>
                 ))}
