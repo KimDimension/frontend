@@ -516,18 +516,17 @@ export default function DashboardPage() {
             <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <colgroup>
-                  <col style={{ width: '10%'  }} />{/* 환자명 */}
-                  <col style={{ width: '8%'   }} />{/* 환자번호 */}
-                  <col style={{ width: '12%'  }} />{/* 전화번호 */}
-                  <col style={{ width: '8%'   }} />{/* 상태 */}
-                  <col style={{ width: '9%'   }} />{/* 위험도 */}
-                  <col style={{ width: '8%'   }} />{/* AI 질문 */}
+                  <col style={{ width: '13%'  }} />{/* 환자명 */}
+                  <col style={{ width: '9%'   }} />{/* 환자번호 */}
+                  <col style={{ width: '14%'  }} />{/* 전화번호 */}
+                  <col style={{ width: '10%'  }} />{/* 상태 */}
+                  <col style={{ width: '10%'  }} />{/* 위험도 */}
+                  <col style={{ width: '9%'   }} />{/* AI 질문 */}
                   <col style={{ width: '35%'  }} />{/* AI 요약 */}
-                  <col style={{ width: '10%'  }} />{/* 기록 보기 */}
                 </colgroup>
                 <thead>
                   <tr style={{ background: C.bg }}>
-                    {['환자명', '환자번호', '전화번호', '상태', '위험도', 'AI 질문', 'AI 요약', ''].map((h, i) => (
+                    {['환자명', '환자번호', '전화번호', '상태', '위험도', 'AI 질문', 'AI 요약'].map((h, i) => (
                       <th key={i} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.textMuted, whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -535,7 +534,7 @@ export default function DashboardPage() {
                 <tbody>
                   {displayPatients.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>
+                      <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>
                         <div style={{ fontSize: 28, marginBottom: 8 }}>
                           {isSearchMode ? '🔍' : '📋'}
                         </div>
@@ -625,21 +624,6 @@ export default function DashboardPage() {
                           )}
                         </td>
 
-                        {/* 액션 버튼 */}
-                        <td style={{ padding: '12px 12px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            {hasRecord && (
-                              <button
-                                style={{ padding: '4px 10px', border: `1px solid ${C.border}`, borderRadius: 7, background: C.primaryLight, color: C.primaryDark, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                                onClick={e => { e.stopPropagation(); navigate('/doctor/record', { state: { recordId: rec!.record_id, patientName: p.name } }) }}
-                              >기록 보기 →</button>
-                            )}
-                            <button
-                              style={{ padding: '4px 10px', border: `1px solid ${C.border}`, borderRadius: 7, background: '#fff', color: C.textMuted, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                              onClick={e => { e.stopPropagation(); navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } }) }}
-                            >전체 기록</button>
-                          </div>
-                        </td>
                       </tr>
                     )
                   })}
