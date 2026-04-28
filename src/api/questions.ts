@@ -70,6 +70,8 @@ export interface AIQuestionRow {
   id: number
   patient_id: number
   patient_name: string
+  patient_birth_date: string | null
+  patient_gender: string | null
   record_id: number
   record_date: string
   question_text: string

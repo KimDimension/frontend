@@ -183,7 +183,15 @@ function parseAiSummary(raw: string): string {
 export default function RecordDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { recordId, patientName } = (location.state ?? {}) as { recordId?: number; patientName?: string }
+  const { recordId, patientName, patientBirthDate, patientGender } = (location.state ?? {}) as { recordId?: number; patientName?: string; patientBirthDate?: string | null; patientGender?: string | null }
+  const calcAge = (b: string | null | undefined) => b ? new Date().getFullYear() - new Date(b).getFullYear() : null
+  const patientLabel = (name: string) => {
+    const age = calcAge(patientBirthDate); const g = patientGender === 'm' ? '남' : patientGender === 'f' ? '여' : null
+    if (age !== null && g) return `${name}(${age}/${g})`
+    if (age !== null) return `${name}(${age})`
+    if (g) return `${name}(${g})`
+    return name
+  }
 
   const [detail,    setDetail]    = useState<RecordDetail | null>(null)
   const [loading,   setLoading]   = useState(true)
@@ -273,7 +281,7 @@ export default function RecordDetailPage() {
         </button>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: C.text, letterSpacing: '-0.03em' }}>
-            {detail.patient_name} 환자 — {detail.record_date}
+            {patientLabel(detail.patient_name)} 환자 — {detail.record_date}
           </h1>
           <p style={{ margin: 0, fontSize: 12, color: C.textMuted, marginTop: 2 }}>제출 시간: {submitTime}</p>
         </div>
@@ -345,7 +353,7 @@ export default function RecordDetailPage() {
         {/* AI 요약 */}
         <Card style={{ background: C.primaryLight, border: `1px solid ${C.primaryDark}20`, padding: 20 }}>
           <div style={{ fontWeight: 800, fontSize: 14, color: C.primaryDark, marginBottom: 12 }}>
-            ✦ AI 요약 ({detail.patient_name})
+            ✦ AI 요약 ({patientLabel(detail.patient_name)})
           </div>
           <div style={{ fontSize: 13, color: C.primaryDark, lineHeight: 1.8 }}>{parseAiSummary(detail.ai_summary)}</div>
         </Card>

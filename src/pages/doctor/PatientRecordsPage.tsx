@@ -209,7 +209,7 @@ export default function PatientRecordsPage() {
                           style={btn.primary}
                           onClick={() =>
                             navigate("/doctor/record", {
-                              state: { recordId: row.record_id, patientName },
+                              state: { recordId: row.record_id, patientName, patientBirthDate: passedBirth, patientGender: passedGender },
                             })
                           }
                         >

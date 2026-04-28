@@ -38,10 +38,20 @@ export default function AIReviewPage() {
   const [statusFilter, setStatusFilter]   = useState<string>("pending");
   const [rejecting, setRejecting]         = useState<number | null>(null);
 
+  // 나이/성별 헬퍼
+  const calcAge = (b: string | null) => b ? new Date().getFullYear() - new Date(b).getFullYear() : null
+  const patientLabel = (name: string, birth: string | null, gender: string | null) => {
+    const age = calcAge(birth); const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
+    if (age !== null && g) return `${name}(${age}/${g})`
+    if (age !== null) return `${name}(${age})`
+    if (g) return `${name}(${g})`
+    return name
+  }
+
   // 환자 목록 (questions에서 추출)
   const patients = Array.from(
-    new Map(questions.map((q) => [q.patient_id, q.patient_name])).entries()
-  ).map(([id, name]) => ({ id, name }));
+    new Map(questions.map((q) => [q.patient_id, { name: q.patient_name, birth: q.patient_birth_date, gender: q.patient_gender }])).entries()
+  ).map(([id, p]) => ({ id, name: p.name, birth: p.birth, gender: p.gender }));
 
   useEffect(() => {
     setLoading(true);
@@ -94,7 +104,7 @@ export default function AIReviewPage() {
         >
           <option value="">전체 환자</option>
           {patients.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+            <option key={p.id} value={p.id}>{patientLabel(p.name, p.birth, p.gender)}</option>
           ))}
         </select>
 
@@ -144,7 +154,7 @@ export default function AIReviewPage() {
             >
               {/* 상단: 환자명 + 날짜 + 타입 + 상태 */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: COLOR.text }}>{q.patient_name}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: COLOR.text }}>{patientLabel(q.patient_name, q.patient_birth_date, q.patient_gender)}</span>
                 <span style={{ fontSize: 11, color: COLOR.textMuted }}>{q.record_date}</span>
                 <span style={{ fontSize: 11, color: COLOR.gray, background: COLOR.grayBg, padding: "1px 7px", borderRadius: 99 }}>
                   {typeLabel(q.question_type)}
