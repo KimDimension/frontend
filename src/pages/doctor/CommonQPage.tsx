@@ -190,33 +190,68 @@ function PatientPicker({ allPatients, selectedIds, onChange }: {
           <p style={{ textAlign: "center", color: COLOR.textMuted, fontSize: 12, padding: "16px 0" }}>
             {search ? "검색 결과가 없습니다." : "담당 환자가 없습니다."}
           </p>
-        ) : (
-          filtered.map((p) => {
-            const checked = selectedIds.includes(p.id);
-            return (
-              <label key={p.id} style={{
+        ) : (() => {
+          const allChecked = filtered.length > 0 && filtered.every((p) => selectedIds.includes(p.id));
+          const someChecked = !allChecked && filtered.some((p) => selectedIds.includes(p.id));
+          const toggleAll = () => {
+            if (allChecked) {
+              onChange(selectedIds.filter((id) => !filtered.some((p) => p.id === id)));
+            } else {
+              const newIds = [...new Set([...selectedIds, ...filtered.map((p) => p.id)])];
+              onChange(newIds);
+            }
+          };
+          return (
+            <>
+              <label style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "9px 14px", cursor: "pointer",
                 borderBottom: `1px solid ${COLOR.grayLight}`,
-                backgroundColor: checked ? "#eff6ff" : "transparent",
+                backgroundColor: allChecked ? "#eff6ff" : "#f0f0f0",
                 transition: "background 0.1s",
               }}>
                 <input
                   type="checkbox"
-                  checked={checked}
-                  onChange={() => toggle(p.id)}
+                  checked={allChecked}
+                  ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                  onChange={toggleAll}
                   style={{ width: 15, height: 15, accentColor: COLOR.primary, cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 13, color: COLOR.text, fontWeight: checked ? 600 : 400 }}>
-                  {p.name}
+                <span style={{ fontSize: 12, color: COLOR.text, fontWeight: 700 }}>
+                  전체 선택
                 </span>
                 <span style={{ fontSize: 11, color: COLOR.textMuted, marginLeft: "auto" }}>
-                  {p.phone_number}
+                  {filtered.filter((p) => selectedIds.includes(p.id)).length}/{filtered.length}명
                 </span>
               </label>
-            );
-          })
-        )}
+              {filtered.map((p) => {
+                const checked = selectedIds.includes(p.id);
+                return (
+                  <label key={p.id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "9px 14px", cursor: "pointer",
+                    borderBottom: `1px solid ${COLOR.grayLight}`,
+                    backgroundColor: checked ? "#eff6ff" : "transparent",
+                    transition: "background 0.1s",
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(p.id)}
+                      style={{ width: 15, height: 15, accentColor: COLOR.primary, cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: 13, color: COLOR.text, fontWeight: checked ? 600 : 400 }}>
+                      {p.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: COLOR.textMuted, marginLeft: "auto" }}>
+                      {p.phone_number}
+                    </span>
+                  </label>
+                );
+              })}
+            </>
+          );
+        })()}
       </div>
       {selectedPatients.length === 0 && (
         <p style={{ fontSize: 11, color: "#f59e0b", margin: 0 }}>
