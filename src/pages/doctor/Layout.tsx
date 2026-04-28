@@ -28,9 +28,14 @@ interface DoctorLayoutProps {
   doctorName?: string
 }
 
-export function DoctorLayout({ children, doctorName = 'Dr. 김의사' }: DoctorLayoutProps) {
+export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   const location = useLocation()
   const navigate  = useNavigate()
+
+  // 실제 로그인한 의사 이름을 localStorage에서 읽어 "OOO 선생님" 형식으로 표시
+  const storedName = localStorage.getItem('user_name') ?? ''
+  const displayName = doctorName ?? (storedName ? `${storedName} 선생님` : '선생님')
+  const avatarChar = storedName ? storedName[0] : 'D'
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < MOBILE_BP)
   // 데스크톱: 사이드바 열림 여부 / 모바일: 상단 메뉴 열림 여부
@@ -155,10 +160,10 @@ export function DoctorLayout({ children, doctorName = 'Dr. 김의사' }: DoctorL
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 12, fontWeight: 700, color: C.primary, flexShrink: 0,
                 }}>
-                  {doctorName[3] ?? 'D'}
+                  {avatarChar}
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{doctorName}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{displayName}</div>
                   <div style={{ fontSize: 10, color: C.textMuted }}>신장분과전문의</div>
                 </div>
               </div>
@@ -174,7 +179,7 @@ export function DoctorLayout({ children, doctorName = 'Dr. 김의사' }: DoctorL
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700, color: C.primary,
               }}>
-                {doctorName[3] ?? 'D'}
+                {avatarChar}
               </div>
             </div>
           )}
@@ -346,10 +351,10 @@ export function DoctorLayout({ children, doctorName = 'Dr. 김의사' }: DoctorL
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 13, fontWeight: 700, color: C.primary,
               }}>
-                {doctorName[3] ?? 'D'}
+                {avatarChar}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{doctorName}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{displayName}</div>
                 <div style={{ fontSize: 11, color: C.textMuted }}>신장분과전문의</div>
               </div>
             </div>

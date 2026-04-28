@@ -21,6 +21,8 @@ const useAuthStore = create<AuthState>((set) => ({
     try {
       const data = await apiLogin(phone_number, password)
       localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('user_name', data.name)
+      localStorage.setItem('user_role', data.role)
       set({
         user: { id: data.user_id, name: data.name, role: data.role },
         isLoading: false,
@@ -41,6 +43,8 @@ const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     localStorage.removeItem('access_token')
+    localStorage.removeItem('user_name')
+    localStorage.removeItem('user_role')
     set({ user: null, error: null })
   },
 
