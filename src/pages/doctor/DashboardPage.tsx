@@ -40,6 +40,32 @@ interface TodayRecord {
   unreviewed_ai_count: number
 }
 
+/* ═══════════════ ai_summary 파싱 헬퍼 ═══════════════
+   DB에 raw JSON이 저장된 경우(파싱 버그 잔재)를 포함해 안정적으로 텍스트 추출 */
+function extractAiSummary(raw: string | null): string | null {
+  if (!raw) return null
+  const trimmed = raw.trim()
+  if (!trimmed.startsWith('{')) return trimmed   // 정상 저장된 경우
+
+  // 유효한 JSON이면 ai_summary 필드만 반환
+  try {
+    const parsed = JSON.parse(trimmed)
+    return parsed.ai_summary ?? null
+  } catch {
+    // truncated/invalid JSON → regex로 ai_summary 값 추출
+    // (?:[^"\\]|\\.)* : 이스케이프 포함 문자열 값 정확히 추출
+    const m = trimmed.match(/"ai_summary"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+    if (m) return m[1].replace(/\\n/g, '\n')
+    // "ai_summary": " 이후 텍스트 최대 200자 (완전 손상된 경우)
+    const idx = trimmed.indexOf('"ai_summary"')
+    if (idx !== -1) {
+      const after = trimmed.slice(idx).replace(/^"ai_summary"\s*:\s*"/, '')
+      return after.replace(/"\s*[,}][\s\S]*$/, '').slice(0, 200) || null
+    }
+    return null
+  }
+}
+
 /* ═══════════════ 환자 이름 포맷 (홍길동(36, 남)) ═══════════════ */
 function calcAge(birth_date: string | null, refDate?: string | null): number | null {
   if (!birth_date) return null
@@ -320,12 +346,7 @@ function PatientCard({
   onCardClick: () => void
   onNameClick: (e: React.MouseEvent) => void
 }) {
-  const rawSummary = record?.ai_summary ?? null
-  const summary = rawSummary
-    ? (rawSummary.trim().startsWith('{')
-        ? (() => { try { return JSON.parse(rawSummary).ai_summary ?? null } catch { return null } })()
-        : rawSummary)
-    : null
+  const summary = extractAiSummary(record?.ai_summary ?? null)
 
   return (
     <div
@@ -687,9 +708,7 @@ export default function DashboardPage() {
                 <td style={{ padding: '12px 12px' }}>
                   {rec?.ai_summary ? (
                     <p style={{ margin: 0, fontSize: 11, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {rec.ai_summary.trim().startsWith('{')
-                        ? (() => { try { return JSON.parse(rec.ai_summary).ai_summary ?? rec.ai_summary } catch { return rec.ai_summary.replace(/\{.*?"ai_summary"\s*:\s*"/, '').slice(0, 120) } })()
-                        : rec.ai_summary}
+                      {extractAiSummary(rec.ai_summary) ?? '—'}
                     </p>
                   ) : <span style={{ fontSize: 12, color: C.textLight }}>—</span>}
                 </td>
