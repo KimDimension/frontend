@@ -25,6 +25,7 @@ interface PatientProfile {
   birth_date: string | null; hospital_name: string | null
   doctor_name: string | null; doctor_id: number | null
   self_memo: string | null; role: string
+  gender: string | null; address: string | null
 }
 interface PendingReq {
   id: number; request_type: string; doctor_name: string | null; status: string
@@ -116,10 +117,15 @@ export default function PatientMyPage() {
   const [pwSaved,   setPwSaved]   = useState(false)
   const [pwError,   setPwError]   = useState('')
 
-  const [memo,       setMemo]       = useState('')
-  const [origMemo,   setOrigMemo]   = useState('')
-  const [memoSaving, setMemoSaving] = useState(false)
-  const [memoSaved,  setMemoSaved]  = useState(false)
+  const [memo,         setMemo]         = useState('')
+  const [origMemo,     setOrigMemo]     = useState('')
+  const [memoSaving,   setMemoSaving]   = useState(false)
+  const [memoSaved,    setMemoSaved]    = useState(false)
+
+  const [address,      setAddress]      = useState('')
+  const [origAddress,  setOrigAddress]  = useState('')
+  const [addrSaving,   setAddrSaving]   = useState(false)
+  const [addrSaved,    setAddrSaved]    = useState(false)
 
   const [pendingReq,     setPendingReq]     = useState<PendingReq | null>(null)
   const [connectMode,    setConnectMode]    = useState(false)
@@ -147,6 +153,7 @@ export default function PatientMyPage() {
         if (!d) return
         setProfile(d); setEditName(d.name); setEditBirth(d.birth_date ?? '')
         setNewPhone(d.phone_number); setMemo(d.self_memo ?? ''); setOrigMemo(d.self_memo ?? '')
+        setAddress(d.address ?? ''); setOrigAddress(d.address ?? '')
       })
       .catch(e => setErr(e.message))
       .finally(() => setLoading(false))
@@ -203,6 +210,16 @@ export default function PatientMyPage() {
       await apiFetch({ self_memo: memo }); setOrigMemo(memo)
       setMemoSaved(true); setTimeout(() => setMemoSaved(false), 2000)
     } catch { } finally { setMemoSaving(false) }
+  }
+
+  const saveAddress = async () => {
+    setAddrSaving(true)
+    try {
+      await apiFetch({ address: address || null })
+      setProfile(p => p ? { ...p, address: address || null } : p)
+      setOrigAddress(address)
+      setAddrSaved(true); setTimeout(() => setAddrSaved(false), 2000)
+    } catch { } finally { setAddrSaving(false) }
   }
 
   const handleHospitalChange = async (id: number | '') => {
@@ -268,6 +285,8 @@ export default function PatientMyPage() {
       </div>
       <InfoRow label="이름"     value={profile.name} />
       <InfoRow label="생년월일"  value={profile.birth_date ?? undefined} />
+      <InfoRow label="성별"     value={profile.gender === 'm' ? '남성' : profile.gender === 'f' ? '여성' : undefined} />
+      <InfoRow label="거주지"    value={profile.address ?? undefined} />
       <InfoRow label="통원 병원" value={profile.hospital_name ?? undefined} />
       <InfoRow label="담당 의사" value={profile.doctor_name ?? undefined} />
       <InfoRow label="전화번호"  value={profile.phone_number} />
@@ -364,6 +383,35 @@ export default function PatientMyPage() {
           placeholder="평소 특이사항을 자유롭게 적어주세요." rows={4}
           style={{ width: '100%', padding: '11px 13px', borderRadius: 10, border: `1.5px solid ${memoChanged ? C.primary : C.border}`, fontSize: 13, fontFamily: 'inherit', color: C.text, resize: 'vertical', outline: 'none', background: '#fafafa', lineHeight: 1.7, boxSizing: 'border-box' }}
         />
+      </SectionCard>
+
+      {/* 거주지 수정 */}
+      <SectionCard>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.text }}>거주지</h2>
+            <p style={{ margin: '3px 0 0', fontSize: 11, color: C.textMuted }}>성별은 가입 시 등록된 정보로 변경할 수 없습니다</p>
+          </div>
+          <button onClick={saveAddress} disabled={addrSaving || address === origAddress} style={saveBtnStyle(addrSaving || address === origAddress, addrSaved)}>
+            {addrSaving ? '저장 중...' : addrSaved ? '✓ 저장됨' : '저장'}
+          </button>
+        </div>
+        {/* 성별 읽기 전용 */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {(['m', 'f'] as const).map(v => (
+            <div key={v} style={{
+              flex: 1, padding: '10px 0', borderRadius: 10, textAlign: 'center',
+              border: `1.5px solid ${profile.gender === v ? C.primary : C.border}`,
+              background: profile.gender === v ? C.primaryLight : '#f9fafb',
+              color: profile.gender === v ? C.primary : C.textMuted,
+              fontSize: 13, fontWeight: 700,
+            }}>
+              {v === 'm' ? '남성' : '여성'}
+              {profile.gender === v && <span style={{ marginLeft: 4, fontSize: 11 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+        <InputField label="거주지 (선택)" value={address} onChange={setAddress} placeholder="예) 서울, 경기 수원" />
       </SectionCard>
 
       {/* 기본 정보 수정 */}

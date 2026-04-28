@@ -22,6 +22,7 @@ const C = {
 
 interface PatientOverview {
   id: number; name: string; phone_number: string
+  birth_date: string | null; gender: string | null
   total_records: number; last_record_date: string | null
   last_submitted_at: string | null
   latest_risk_level: 'urgent' | 'caution' | 'normal' | null
@@ -29,6 +30,25 @@ interface PatientOverview {
   is_current: boolean
   assignment_started_at: string | null
   assignment_ended_at: string | null
+}
+
+/* ── 환자 이름 포맷 (홍길동(36, 남)) ── */
+function calcAge(birth_date: string | null): number | null {
+  if (!birth_date) return null
+  const today = new Date()
+  const birth = new Date(birth_date)
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
+function patientLabel(name: string, birth_date: string | null, gender: string | null): string {
+  const age = calcAge(birth_date)
+  const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
+  if (age !== null && g) return `${name}(${age}, ${g})`
+  if (age !== null) return `${name}(${age})`
+  if (g) return `${name}(${g})`
+  return name
 }
 
 interface DrawerProfile {
@@ -105,7 +125,7 @@ function PatientCard({ p, query, onClick, isCurrent }: {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <span style={{ fontWeight: 700, fontSize: 15, color: C.primaryDark }}>
-          <Highlight text={p.name} query={query} />
+          <Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={query} />
         </span>
         <span style={{ fontSize: 11, color: C.textMuted, background: C.bg, borderRadius: 5, padding: '2px 6px', fontWeight: 600 }}>
           #{String(p.id).padStart(4, '0')}
@@ -479,7 +499,7 @@ export default function PatientListPage() {
                       onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                       onMouseLeave={e => (e.currentTarget.style.background = isOverdue ? '#fffef0' : '#fff')}
                     >
-                      <td style={{ padding: '12px 14px', fontWeight: 700, color: C.primaryDark }}><Highlight text={p.name} query={query} /></td>
+                      <td style={{ padding: '12px 14px', fontWeight: 700, color: C.primaryDark }}><Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={query} /></td>
                       <td style={{ padding: '12px 14px', color: C.textMuted, fontSize: 12 }}>#{String(p.id).padStart(4, '0')}</td>
                       <td style={{ padding: '12px 14px', color: C.textMuted }}><Highlight text={p.phone_number} query={query} /></td>
                       <td style={{ padding: '12px 14px' }}>

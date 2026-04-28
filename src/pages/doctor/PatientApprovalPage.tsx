@@ -180,12 +180,26 @@ export default function PatientApprovalPage() {
             </Card>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {pending.map(reg => (
-                <Card key={reg.id} style={{ padding: '16px 20px' }}>
+              {pending.map(reg => {
+                const isConnect = reg.request_type !== 'discharge'
+                return (
+                <Card key={reg.id} style={{
+                  padding: '16px 20px',
+                  borderLeft: `4px solid ${isConnect ? C.primary : C.danger}`,
+                }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <span style={{ fontSize: 16, fontWeight: 800, color: C.text }}>{reg.name}</span>
+                        {/* 요청 유형 뱃지 */}
+                        <span style={{
+                          background: isConnect ? 'var(--capd-primary-light)' : C.dangerLight,
+                          color:      isConnect ? 'var(--capd-primary-dark)'  : C.danger,
+                          borderRadius: 6, padding: '3px 10px',
+                          fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
+                        }}>
+                          {isConnect ? '🔗 담당 연결 요청' : '🔓 담당 해제 요청'}
+                        </span>
                         <Badge color="warning">대기 중</Badge>
                       </div>
                       <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.8 }}>
@@ -201,7 +215,8 @@ export default function PatientApprovalPage() {
                     </div>
                   </div>
                 </Card>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -212,12 +227,17 @@ export default function PatientApprovalPage() {
         <div>
           <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 12 }}>처리 완료</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {done.map(item => (
+            {done.map(item => {
+              const isConnect = item.request_type !== 'discharge'
+              return (
               <Card key={item.id} style={{ padding: '14px 20px', opacity: 0.75 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: C.text, marginRight: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>
                       {item.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: C.textMuted, background: C.bg, borderRadius: 5, padding: '2px 7px' }}>
+                      {isConnect ? '연결 요청' : '해제 요청'}
                     </span>
                     <span style={{ fontSize: 12, color: C.textMuted }}>
                       {item.birth_date}{item.hospital_name ? ` · ${item.hospital_name}` : ''}
@@ -228,7 +248,8 @@ export default function PatientApprovalPage() {
                   </Badge>
                 </div>
               </Card>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

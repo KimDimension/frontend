@@ -45,6 +45,7 @@ export interface PatientRegistrationInfo {
   hospital_name?: string
   status: RegistrationStatus
   created_at: string
+  request_type?: 'connect' | 'discharge'  // 연결 신청 | 해제 신청
 }
 
 // ── 교환기록 (ExchangeRecord) ──────────────────────────────

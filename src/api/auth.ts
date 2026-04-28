@@ -58,6 +58,8 @@ export async function patientRequest(payload: {
   hospital_id?: number
   phone_number: string
   password: string
+  gender: string
+  address?: string
 }): Promise<{ user_id: number }> {
   const { data } = await client.post('/api/v1/registration/patient/request', payload)
   return data

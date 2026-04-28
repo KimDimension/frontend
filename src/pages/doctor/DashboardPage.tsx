@@ -25,15 +25,38 @@ interface PatientInfo {
   id:           number
   name:         string
   phone_number: string
+  birth_date:   string | null
+  gender:       string | null
 }
 interface TodayRecord {
   record_id:           number
   patient_id:          number
   patient_name:        string
+  patient_birth_date:  string | null
+  patient_gender:      string | null
   status:              string
   risk_level:          'urgent' | 'caution' | 'normal' | null
   ai_summary:          string | null
   unreviewed_ai_count: number
+}
+
+/* ═══════════════ 환자 이름 포맷 (홍길동(36, 남)) ═══════════════ */
+function calcAge(birth_date: string | null): number | null {
+  if (!birth_date) return null
+  const today = new Date()
+  const birth = new Date(birth_date)
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
+function patientLabel(name: string, birth_date: string | null, gender: string | null): string {
+  const age = calcAge(birth_date)
+  const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
+  if (age !== null && g) return `${name}(${age}, ${g})`
+  if (age !== null) return `${name}(${age})`
+  if (g) return `${name}(${g})`
+  return name
 }
 interface DashboardStats {
   total_submitted: number
@@ -326,7 +349,7 @@ function PatientCard({
             paddingBottom: 1, cursor: 'pointer', flexShrink: 0,
           }}
         >
-          <Highlight text={patient.name} query={searchQuery} />
+          <Highlight text={patientLabel(patient.name, patient.birth_date, patient.gender)} query={searchQuery} />
         </span>
         <span style={{ fontSize: 11, color: C.textMuted, background: C.bg, borderRadius: 5, padding: '2px 6px', fontWeight: 600 }}>
           #{String(patient.id).padStart(4, '0')}
@@ -431,7 +454,7 @@ export default function DashboardPage() {
   const searchFiltered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return patients
-    return patients.filter(p => p.name.toLowerCase().includes(q))
+    return patients.filter(p => p.name.toLowerCase().includes(q))  // 이름 기준 검색 유지
   }, [patients, searchQuery])
 
   /* ── 상태 필터 ── */
@@ -636,7 +659,7 @@ export default function DashboardPage() {
                 <td style={{ padding: '12px 12px', fontWeight: 700, fontSize: 14 }}
                   onClick={e => { e.stopPropagation(); navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } }) }}>
                   <span style={{ color: C.primaryDark, cursor: 'pointer', borderBottom: `1px dashed ${C.primaryDark}60`, paddingBottom: 1 }}>
-                    <Highlight text={p.name} query={searchQuery} />
+                    <Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={searchQuery} />
                   </span>
                 </td>
                 <td style={{ padding: '12px 12px' }}>

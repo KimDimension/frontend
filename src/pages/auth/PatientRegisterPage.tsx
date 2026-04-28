@@ -76,6 +76,8 @@ export default function PatientRegisterPage() {
   const [phone,           setPhone]           = useState('')
   const [password,        setPassword]        = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [gender,          setGender]          = useState<'m' | 'f' | ''>('')
+  const [address,         setAddress]         = useState('')
 
   useEffect(() => {
     getHospitals().then(setHospitals).catch(() => {})
@@ -85,6 +87,7 @@ export default function PatientRegisterPage() {
     e.preventDefault()
     if (!name.trim())  { setError('이름을 입력해주세요.'); return }
     if (!birthDate)    { setError('생년월일을 입력해주세요.'); return }
+    if (!gender)       { setError('성별을 선택해주세요.'); return }
     if (!phone.trim()) { setError('전화번호를 입력해주세요.'); return }
     if (password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return }
     if (password !== passwordConfirm) { setError('비밀번호가 일치하지 않습니다.'); return }
@@ -97,6 +100,8 @@ export default function PatientRegisterPage() {
         hospital_id: hospitalId ? Number(hospitalId) : undefined,
         phone_number: phone,
         password,
+        gender,
+        address: address.trim() || undefined,
       })
       setDone(true)
     } catch (err: any) {
@@ -145,6 +150,28 @@ export default function PatientRegisterPage() {
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <Field label="이름 *" placeholder="홍길동" value={name} onChange={e => setName(e.target.value)} />
                 <Field label="생년월일 *" type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+                {/* 성별 (필수) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: C.text }}>성별 *</label>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    {([['m', '남성'], ['f', '여성']] as const).map(([val, label]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setGender(val)}
+                        style={{
+                          flex: 1, padding: '11px 0', borderRadius: 10,
+                          border: `1.5px solid ${gender === val ? C.primary : C.border}`,
+                          background: gender === val ? C.primaryLight : '#fff',
+                          color: gender === val ? C.primary : C.textMuted,
+                          fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                          fontFamily: 'inherit', transition: 'all 0.15s',
+                        }}
+                      >{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <Field label="거주지 (선택)" placeholder="예) 서울, 경기 수원" value={address} onChange={e => setAddress(e.target.value)} />
                 <Field label="통원 병원 (선택)">
                   <select style={selectStyle} value={hospitalId}
                     onChange={e => setHospitalId(Number(e.target.value) || '')}>
