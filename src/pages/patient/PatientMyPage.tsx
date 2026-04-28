@@ -31,6 +31,11 @@ interface PendingReq {
   id: number; request_type: string; doctor_name: string | null; status: string
 }
 
+function calcAge(birth_date: string | null): number | null {
+  if (!birth_date) return null
+  return new Date().getFullYear() - new Date(birth_date).getFullYear()
+}
+
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <div style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
@@ -281,7 +286,14 @@ export default function PatientMyPage() {
           {profile.name[0] ?? 'P'}
         </div>
         <div style={{ fontWeight: 800, fontSize: 16, color: C.text }}>{profile.name}</div>
-        <div style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>CAPD 환자</div>
+        <div style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>
+          CAPD 환자
+          {(calcAge(profile.birth_date) !== null || profile.gender) && (
+            <span style={{ marginLeft: 6, color: C.primary, fontWeight: 700 }}>
+              {[calcAge(profile.birth_date), profile.gender === 'm' ? '남' : profile.gender === 'f' ? '여' : null].filter(Boolean).join('/')}
+            </span>
+          )}
+        </div>
       </div>
       <InfoRow label="이름"     value={profile.name} />
       <InfoRow label="생년월일"  value={profile.birth_date ?? undefined} />

@@ -217,45 +217,33 @@ export default function DoctorMyPage() {
   if (err)     return <div style={{ padding: 40, color: C.danger,    fontSize: 13 }}>오류: {err}</div>
   if (!profile) return null
 
-  /* ── 프로필 카드 (공통) ── */
-  const ProfileCard = () => (
+  /* ── 프로필 카드 — plain JSX (함수 컴포넌트 X, 렌더마다 unmount 방지) ── */
+  const profileCard = (
     <SectionCard style={{ marginBottom: isMobile ? 14 : 0 }}>
-      {/* 아바타 + 이름 */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: 16, borderBottom: `1px solid ${C.border}`, marginBottom: 14 }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: C.primaryLight,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 26, fontWeight: 900, color: C.primary, marginBottom: 10,
-        }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: C.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 900, color: C.primary, marginBottom: 10 }}>
           {profile.name[0] ?? 'D'}
         </div>
         <div style={{ fontWeight: 800, fontSize: 16, color: C.text }}>{profile.name} 선생님</div>
         <div style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>신장분과전문의</div>
       </div>
-
-      <InfoRow label="이름"       value={profile.name} />
-      <InfoRow label="생년월일"    value={profile.birth_date ?? undefined} />
-      <InfoRow label="자격번호"    value={profile.license_number ?? undefined} />
-      <InfoRow label="소속 병원"   value={profile.hospital_name ?? undefined} />
-      <InfoRow label="전화번호"    value={profile.phone_number} />
+      <InfoRow label="이름"     value={profile.name} />
+      <InfoRow label="생년월일"  value={profile.birth_date ?? undefined} />
+      <InfoRow label="자격번호"  value={profile.license_number ?? undefined} />
+      <InfoRow label="소속 병원" value={profile.hospital_name ?? undefined} />
+      <InfoRow label="전화번호"  value={profile.phone_number} />
     </SectionCard>
   )
 
-  /* ── 수정 섹션들 ── */
-  const EditSections = () => (
+  /* ── 수정 섹션 — plain JSX ── */
+  const editSections = (
     <>
-      {/* ── 기본 정보 수정 ── */}
+      {/* 기본 정보 수정 */}
       <SectionCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editProfile ? 14 : 0 }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.text }}>기본 정보 수정</h2>
-          {!editProfile && (
-            <button style={editBtn} onClick={() => { setEditProfile(true); setProfError(''); setProfPw('') }}>
-              수정하기
-            </button>
-          )}
+          {!editProfile && <button style={editBtn} onClick={() => { setEditProfile(true); setProfError(''); setProfPw('') }}>수정하기</button>}
         </div>
-
         {editProfile && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <InputField label="이름" value={editName} onChange={setEditName} placeholder="이름" autoFocus />
@@ -264,11 +252,7 @@ export default function DoctorMyPage() {
             {profError && <p style={{ margin: 0, fontSize: 12, color: C.danger }}>{profError}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
               <button style={cancelBtn} onClick={() => { setEditProfile(false); setEditName(profile.name); setEditBirth(profile.birth_date ?? ''); setProfError('') }}>취소</button>
-              <button
-                onClick={saveProfile}
-                disabled={profSaving || !profPw || (!editName.trim())}
-                style={saveBtn(profSaving || !profPw || !editName.trim(), profSaved)}
-              >
+              <button onClick={saveProfile} disabled={profSaving || !profPw || !editName.trim()} style={saveBtn(profSaving || !profPw || !editName.trim(), profSaved)}>
                 {profSaving ? '저장 중...' : profSaved ? '✓ 저장됨' : '저장'}
               </button>
             </div>
@@ -276,17 +260,12 @@ export default function DoctorMyPage() {
         )}
       </SectionCard>
 
-      {/* ── 전화번호 변경 ── */}
+      {/* 전화번호 변경 */}
       <SectionCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editPhone ? 14 : 0 }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.text }}>전화번호 변경</h2>
-          {!editPhone && (
-            <button style={editBtn} onClick={() => { setEditPhone(true); setPhoneError(''); setPhonePw(''); setNewPhone(profile.phone_number) }}>
-              수정하기
-            </button>
-          )}
+          {!editPhone && <button style={editBtn} onClick={() => { setEditPhone(true); setPhoneError(''); setPhonePw(''); setNewPhone(profile.phone_number) }}>수정하기</button>}
         </div>
-
         {editPhone && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <InputField label="새 전화번호" type="tel" value={newPhone} onChange={setNewPhone} placeholder="010-0000-0000" autoFocus />
@@ -294,11 +273,7 @@ export default function DoctorMyPage() {
             {phoneError && <p style={{ margin: 0, fontSize: 12, color: C.danger }}>{phoneError}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
               <button style={cancelBtn} onClick={() => { setEditPhone(false); setPhoneError('') }}>취소</button>
-              <button
-                onClick={savePhone}
-                disabled={phoneSaving || !phonePw || newPhone === profile.phone_number}
-                style={saveBtn(phoneSaving || !phonePw || newPhone === profile.phone_number, phoneSaved)}
-              >
+              <button onClick={savePhone} disabled={phoneSaving || !phonePw || newPhone === profile.phone_number} style={saveBtn(phoneSaving || !phonePw || newPhone === profile.phone_number, phoneSaved)}>
                 {phoneSaving ? '저장 중...' : phoneSaved ? '✓ 저장됨' : '변경'}
               </button>
             </div>
@@ -306,30 +281,21 @@ export default function DoctorMyPage() {
         )}
       </SectionCard>
 
-      {/* ── 비밀번호 변경 ── */}
+      {/* 비밀번호 변경 */}
       <SectionCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editPw ? 14 : 0 }}>
           <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.text }}>비밀번호 변경</h2>
-          {!editPw && (
-            <button style={editBtn} onClick={() => { setEditPw(true); setPwError(''); setCurPw(''); setNewPw(''); setConfirmPw('') }}>
-              수정하기
-            </button>
-          )}
+          {!editPw && <button style={editBtn} onClick={() => { setEditPw(true); setPwError(''); setCurPw(''); setNewPw(''); setConfirmPw('') }}>수정하기</button>}
         </div>
-
         {editPw && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <InputField label="현재 비밀번호" type="password" value={curPw}     onChange={setCurPw}     placeholder="현재 비밀번호" autoFocus />
-            <InputField label="새 비밀번호"   type="password" value={newPw}     onChange={setNewPw}     placeholder="6자 이상" />
+            <InputField label="현재 비밀번호"    type="password" value={curPw}     onChange={setCurPw}     placeholder="현재 비밀번호" autoFocus />
+            <InputField label="새 비밀번호"      type="password" value={newPw}     onChange={setNewPw}     placeholder="6자 이상" />
             <InputField label="새 비밀번호 확인" type="password" value={confirmPw} onChange={setConfirmPw} placeholder="새 비밀번호 재입력" />
             {pwError && <p style={{ margin: 0, fontSize: 12, color: C.danger }}>{pwError}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
               <button style={cancelBtn} onClick={() => { setEditPw(false); setPwError('') }}>취소</button>
-              <button
-                onClick={savePw}
-                disabled={pwSaving || !curPw || !newPw || !confirmPw}
-                style={saveBtn(pwSaving || !curPw || !newPw || !confirmPw, pwSaved)}
-              >
+              <button onClick={savePw} disabled={pwSaving || !curPw || !newPw || !confirmPw} style={saveBtn(pwSaving || !curPw || !newPw || !confirmPw, pwSaved)}>
                 {pwSaving ? '변경 중...' : pwSaved ? '✓ 변경됨' : '비밀번호 변경'}
               </button>
             </div>
@@ -341,27 +307,17 @@ export default function DoctorMyPage() {
 
   return (
     <div style={{ padding: isMobile ? '20px 16px' : '28px 32px', minHeight: '100vh' }}>
-      {/* 페이지 제목 */}
       <div style={{ marginBottom: isMobile ? 18 : 24 }}>
         <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 900, color: C.text, letterSpacing: '-0.04em' }}>마이페이지</h1>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: C.textMuted }}>계정 정보 확인 및 수정</p>
       </div>
 
       {isMobile ? (
-        /* ── 모바일: 단열 ── */
-        <>
-          <ProfileCard />
-          <EditSections />
-        </>
+        <>{profileCard}{editSections}</>
       ) : (
-        /* ── 데스크톱: 2열 ── */
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-          <div style={{ flex: '0 0 260px' }}>
-            <ProfileCard />
-          </div>
-          <div style={{ flex: 1 }}>
-            <EditSections />
-          </div>
+          <div style={{ flex: '0 0 260px' }}>{profileCard}</div>
+          <div style={{ flex: 1 }}>{editSections}</div>
         </div>
       )}
     </div>

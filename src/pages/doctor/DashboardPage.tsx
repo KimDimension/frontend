@@ -43,17 +43,12 @@ interface TodayRecord {
 /* ═══════════════ 환자 이름 포맷 (홍길동(36, 남)) ═══════════════ */
 function calcAge(birth_date: string | null): number | null {
   if (!birth_date) return null
-  const today = new Date()
-  const birth = new Date(birth_date)
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age
+  return new Date().getFullYear() - new Date(birth_date).getFullYear()
 }
 function patientLabel(name: string, birth_date: string | null, gender: string | null): string {
   const age = calcAge(birth_date)
   const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
-  if (age !== null && g) return `${name}(${age}, ${g})`
+  if (age !== null && g) return `${name}(${age}/${g})`
   if (age !== null) return `${name}(${age})`
   if (g) return `${name}(${g})`
   return name

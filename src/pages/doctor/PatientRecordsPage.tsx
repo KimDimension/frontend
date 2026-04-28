@@ -51,12 +51,29 @@ function monthLabel(key: string) {
   return `${yyyy}년 ${parseInt(mm, 10)}월`;
 }
 
+/* ── 나이/성별 포맷 ───────────────────────────────────── */
+function calcAge(birth_date: string | null): number | null {
+  if (!birth_date) return null
+  return new Date().getFullYear() - new Date(birth_date).getFullYear()
+}
+function patientLabel(name: string, birth_date: string | null, gender: string | null): string {
+  const age = calcAge(birth_date)
+  const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
+  if (age !== null && g) return `${name}(${age}/${g})`
+  if (age !== null) return `${name}(${age})`
+  if (g) return `${name}(${g})`
+  return name
+}
+
 /* ── 메인 ─────────────────────────────────────────────── */
 export default function PatientRecordsPage() {
   const { patientId }  = useParams<{ patientId: string }>();
   const navigate       = useNavigate();
   const location       = useLocation();
-  const passedName     = (location.state as { patientName?: string } | null)?.patientName ?? "";
+  const locState       = location.state as { patientName?: string; patientBirthDate?: string | null; patientGender?: string | null } | null;
+  const passedName     = locState?.patientName ?? "";
+  const passedBirth    = locState?.patientBirthDate ?? null;
+  const passedGender   = locState?.patientGender ?? null;
 
   const [data,    setData]    = useState<PatientRecordsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +119,8 @@ export default function PatientRecordsPage() {
     });
   };
 
-  const patientName = data?.patient_name ?? passedName;
+  const patientName  = data?.patient_name ?? passedName;
+  const displayName  = patientLabel(patientName, passedBirth, passedGender);
 
   if (loading) return <div style={{ padding: 24, color: COLOR.textMuted, fontSize: 13 }}>불러오는 중...</div>;
   if (error)   return <div style={{ padding: 24, color: COLOR.danger,    fontSize: 13 }}>오류: {error}</div>;
@@ -129,7 +147,7 @@ export default function PatientRecordsPage() {
             ← 뒤로
           </button>
           <div>
-            <h1 style={typography.pageTitle}>{patientName} 환자</h1>
+            <h1 style={typography.pageTitle}>{displayName} 환자</h1>
             <p style={typography.pageSubtitle}>전체 기록 {totalCount}건</p>
           </div>
         </div>

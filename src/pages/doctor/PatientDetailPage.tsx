@@ -36,6 +36,21 @@ interface PatientProfile {
   doctor_name:   string | null
   self_memo:     string | null
   joined_at:     string | null
+  gender:        string | null
+  address:       string | null
+}
+
+function calcAge(birth_date: string | null): number | null {
+  if (!birth_date) return null
+  return new Date().getFullYear() - new Date(birth_date).getFullYear()
+}
+function patientLabel(name: string, birth_date: string | null, gender: string | null): string {
+  const age = calcAge(birth_date)
+  const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
+  if (age !== null && g) return `${name}(${age}/${g})`
+  if (age !== null) return `${name}(${age})`
+  if (g) return `${name}(${g})`
+  return name
 }
 
 function formatDate(str: string | null) {
@@ -134,13 +149,13 @@ export default function PatientDetailPage() {
         </button>
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: C.text, letterSpacing: '-0.03em' }}>
-            {profile.name} 환자
+            {patientLabel(profile.name, profile.birth_date, profile.gender)} 환자
           </h1>
           <p style={{ margin: 0, fontSize: 12, color: C.textMuted, marginTop: 2 }}>환자 상세 정보</p>
         </div>
         <div style={{ marginLeft: 'auto' }}>
           <button
-            onClick={() => navigate(`/doctor/patients/${patientId}/records`, { state: { patientName: profile.name } })}
+            onClick={() => navigate(`/doctor/patients/${patientId}/records`, { state: { patientName: profile.name, patientBirthDate: profile.birth_date, patientGender: profile.gender } })}
             style={{
               background: C.primary, color: '#fff', border: 'none',
               borderRadius: 9, padding: '9px 18px', cursor: 'pointer',
@@ -157,6 +172,8 @@ export default function PatientDetailPage() {
         <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>기본 정보</h2>
         <InfoRow label="이름"     value={profile.name} />
         <InfoRow label="생년월일"  value={profile.birth_date ? formatDate(profile.birth_date + 'T00:00:00') : null} />
+        <InfoRow label="성별"     value={profile.gender === 'm' ? '남성' : profile.gender === 'f' ? '여성' : undefined} />
+        <InfoRow label="거주지"    value={profile.address ?? undefined} />
         <InfoRow label="전화번호"  value={profile.phone_number} />
         <InfoRow label="소속 병원" value={profile.hospital_name} />
         <InfoRow label="담당 의사" value={profile.doctor_name} />
