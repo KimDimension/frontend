@@ -247,16 +247,25 @@ export default function RecordListPage() {
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           나의 기록
         </span>
-        {/* 로그아웃 */}
-        <button
-          onClick={() => { localStorage.clear(); navigate('/login') }}
-          style={{
-            marginLeft: 'auto', background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8,
-            color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            padding: '5px 12px', fontFamily: 'inherit',
-          }}
-        >↩ 로그아웃</button>
+        {/* 우측 버튼 그룹 */}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => navigate('/patient/mypage')}
+            style={{
+              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', padding: '5px 12px', fontFamily: 'inherit',
+            }}
+          >👤 마이페이지</button>
+          <button
+            onClick={() => { localStorage.clear(); navigate('/login') }}
+            style={{
+              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', padding: '5px 12px', fontFamily: 'inherit',
+            }}
+          >↩ 로그아웃</button>
+        </div>
       </header>
 
       <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 48px' }}>

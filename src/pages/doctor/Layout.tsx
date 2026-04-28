@@ -18,6 +18,7 @@ const navItems = [
   { id: 'approve',      label: '환자 가입 승인', icon: '👥', path: '/doctor/approve' },
   { id: 'questions',    label: '공통 질문',      icon: '❓', path: '/doctor/common-questions' },
   { id: 'ai-questions', label: 'AI 질문 검토',   icon: '🤖', path: '/doctor/ai-questions' },
+  { id: 'mypage',       label: '마이페이지',     icon: '👤', path: '/doctor/mypage' },
 ]
 
 const MOBILE_BP = 768

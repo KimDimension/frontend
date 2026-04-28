@@ -124,9 +124,9 @@ export default function PatientRecordsPage() {
           <button
             className="back-btn"
             style={btn.ghost}
-            onClick={() => navigate("/doctor")}
+            onClick={() => navigate(-1)}
           >
-            ← 대시보드
+            ← 뒤로
           </button>
           <div>
             <h1 style={typography.pageTitle}>{patientName} 환자</h1>

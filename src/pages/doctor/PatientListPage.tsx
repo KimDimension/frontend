@@ -229,7 +229,6 @@ export default function PatientListPage() {
       {/* 헤더 */}
       <div style={{ marginBottom: isMobile ? 14 : 22 }}>
         <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 22, fontWeight: 900, color: C.text, letterSpacing: '-0.04em' }}>담당 환자 관리</h1>
-        <div style={{ fontSize: isMobile ? 12 : 13, color: C.textMuted, marginTop: 3 }}>전체 담당 환자 목록 — 날짜 무관</div>
       </div>
 
       {/* 요약 카드 */}
@@ -413,7 +412,7 @@ export default function PatientListPage() {
                       <td style={{ padding: '13px 12px' }} onClick={e => e.stopPropagation()}>
                         <button onClick={() => navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } })}
                           style={{ padding: '5px 12px', border: `1px solid ${C.border}`, borderRadius: 7, background: isOverdue ? C.warningLight : C.primaryLight, color: isOverdue ? C.warning : C.primaryDark, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                          기록 전체 보기 →
+                          상세 보기 →
                         </button>
                       </td>
                     </tr>

@@ -9,6 +9,7 @@ import DashboardPage from "../pages/doctor/DashboardPage";
 import RecordDetailPage from "../pages/doctor/RecordDetailPage";
 import PatientRecordsPage from "../pages/doctor/PatientRecordsPage";
 import PatientListPage from "../pages/doctor/PatientListPage";
+import PatientDetailPage from "../pages/doctor/PatientDetailPage";
 import CommonQPage from "../pages/doctor/CommonQPage";
 import AIReviewPage from "../pages/doctor/AIReviewPage";
 import PatientApprovalPage from "../pages/doctor/PatientApprovalPage";
@@ -16,6 +17,8 @@ import RecordListPage from "../pages/patient/RecordListPage";
 import RecordSubmitPage from "../pages/patient/RecordSubmitPage";
 import SurveyPage from "../pages/patient/SurveyPage";
 import SurveyDonePage from "../pages/patient/SurveyDonePage";
+import PatientMyPage from "../pages/patient/PatientMyPage";
+import DoctorMyPage from "../pages/doctor/DoctorMyPage";
 
 // 준비 중 placeholder
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -69,6 +72,10 @@ const router = createBrowserRouter([
   },
   {
     path: "/doctor/patients/:patientId",
+    element: <PrivateRoute><DoctorLayout><PatientDetailPage /></DoctorLayout></PrivateRoute>,
+  },
+  {
+    path: "/doctor/patients/:patientId/records",
     element: <PrivateRoute><DoctorLayout><PatientRecordsPage /></DoctorLayout></PrivateRoute>,
   },
   {
@@ -82,6 +89,10 @@ const router = createBrowserRouter([
   {
     path: "/doctor/ai-questions",
     element: <PrivateRoute><DoctorLayout><AIReviewPage /></DoctorLayout></PrivateRoute>,
+  },
+  {
+    path: "/doctor/mypage",
+    element: <PrivateRoute><DoctorLayout><DoctorMyPage /></DoctorLayout></PrivateRoute>,
   },
   // ── 환자 ──────────────────────────────────────────────────
   {
@@ -99,6 +110,10 @@ const router = createBrowserRouter([
   {
     path: "/patient/survey/done",
     element: <PrivateRoute><SurveyDonePage /></PrivateRoute>,
+  },
+  {
+    path: "/patient/mypage",
+    element: <PrivateRoute><PatientMyPage /></PrivateRoute>,
   },
 ]);
 
