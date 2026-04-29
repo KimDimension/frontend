@@ -123,7 +123,7 @@ function PatientCard({ p, query, onClick, isCurrent }: {
       cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', opacity: isCurrent ? 1 : 0.82,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-        <span style={{ fontWeight: 700, fontSize: 15, color: C.primaryDark }}>
+        <span style={{ fontWeight: 700, fontSize: 15, color: C.primaryDark, textDecoration: 'underline', textUnderlineOffset: 3 }}>
           <Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={query} />
         </span>
         <span style={{ fontSize: 11, color: C.textMuted, background: C.bg, borderRadius: 5, padding: '2px 6px', fontWeight: 600 }}>
@@ -478,7 +478,6 @@ export default function PatientListPage() {
                   { k: 'total'       as SortKey, l: '총 기록' },
                   { k: 'last_record' as SortKey, l: '마지막 기록' },
                   { k: null,                      l: scope === 'current' ? '경과일' : '담당 종료일' },
-                  { k: null,                      l: '액션' },
                 ].map((col, i) => (
                   <th key={i} onClick={col.k ? () => handleSort(col.k!) : undefined}
                     style={{ padding: '12px 14px', fontWeight: 700, color: C.textMuted, textAlign: 'left', cursor: col.k ? 'pointer' : 'default', userSelect: 'none', whiteSpace: 'nowrap', fontSize: 12 }}>
@@ -489,7 +488,7 @@ export default function PatientListPage() {
             </thead>
             <tbody>
               {filtered.length === 0
-                ? <tr><td colSpan={8} style={{ padding: '40px 14px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>{scope === 'past' ? '과거 담당 환자가 없습니다.' : '조건에 맞는 환자가 없습니다.'}</td></tr>
+                ? <tr><td colSpan={7} style={{ padding: '40px 14px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>{scope === 'past' ? '과거 담당 환자가 없습니다.' : '조건에 맞는 환자가 없습니다.'}</td></tr>
                 : filtered.map((p, idx) => {
                   const isOverdue = scope === 'current' && p.days_since_last_record !== null && p.days_since_last_record >= 3
                   return (
@@ -498,7 +497,7 @@ export default function PatientListPage() {
                       onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                       onMouseLeave={e => (e.currentTarget.style.background = isOverdue ? '#fffef0' : '#fff')}
                     >
-                      <td style={{ padding: '12px 14px', fontWeight: 700, color: C.primaryDark }}><Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={query} /></td>
+                      <td style={{ padding: '12px 14px', fontWeight: 700, color: C.primaryDark, textDecoration: 'underline', textUnderlineOffset: 3 }}><Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={query} /></td>
                       <td style={{ padding: '12px 14px', color: C.textMuted, fontSize: 12 }}>#{String(p.id).padStart(4, '0')}</td>
                       <td style={{ padding: '12px 14px', color: C.textMuted }}><Highlight text={p.phone_number} query={query} /></td>
                       <td style={{ padding: '12px 14px' }}>
@@ -516,12 +515,6 @@ export default function PatientListPage() {
                           : p.assignment_ended_at
                             ? <span style={{ fontSize: 12, color: C.textMuted }}>{new Date(p.assignment_ended_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                             : <span style={{ fontSize: 12, color: C.textLight }}>—</span>}
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <button onClick={e => { e.stopPropagation(); setDrawerPatientId(p.id) }}
-                          style={{ background: C.primaryLight, color: C.primary, border: 'none', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          상세 보기
-                        </button>
                       </td>
                     </tr>
                   )

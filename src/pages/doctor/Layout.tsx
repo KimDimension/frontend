@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 const C = {
@@ -28,6 +28,8 @@ interface DoctorLayoutProps {
   doctorName?: string
 }
 
+const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
+
 export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   const location = useLocation()
   const navigate  = useNavigate()
@@ -40,6 +42,27 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < MOBILE_BP)
   // 데스크톱: 사이드바 열림 여부 / 모바일: 상단 메뉴 열림 여부
   const [open, setOpen] = useState(!isMobile)
+  const [pendingCount, setPendingCount] = useState(0)
+
+  const fetchPendingCount = useCallback(async () => {
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+    try {
+      const res = await fetch(`${API}/api/v1/patient-registrations/pending`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPendingCount(Array.isArray(data) ? data.length : 0)
+      }
+    } catch { /* 무시 */ }
+  }, [])
+
+  useEffect(() => {
+    fetchPendingCount()
+    const interval = setInterval(fetchPendingCount, 60000)
+    return () => clearInterval(interval)
+  }, [fetchPendingCount])
 
   useEffect(() => {
     const onResize = () => {
@@ -188,6 +211,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
           <nav style={{ flex: 1, padding: open ? '0 10px' : '0 8px' }}>
             {navItems.map(item => {
               const active = isActive(item.path)
+              const badge = item.id === 'approve' && pendingCount > 0 ? pendingCount : 0
               return (
                 <div
                   key={item.id}
@@ -209,6 +233,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
                     transition: 'background 0.15s',
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
+                    position: 'relative',
                   }}
                   onMouseEnter={e => {
                     if (!active) (e.currentTarget as HTMLDivElement).style.background = C.bg
@@ -217,8 +242,20 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
                     if (!active) (e.currentTarget as HTMLDivElement).style.background = 'transparent'
                   }}
                 >
-                  <span style={{ fontSize: 15 }}>{item.icon}</span>
+                  <span style={{ fontSize: 15, position: 'relative' }}>
+                    {item.icon}
+                    {!open && badge > 0 && (
+                      <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: '#fff', borderRadius: 99, fontSize: 9, fontWeight: 800, minWidth: 14, height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', lineHeight: 1 }}>
+                        {badge > 99 ? '99+' : badge}
+                      </span>
+                    )}
+                  </span>
                   {open && item.label}
+                  {open && badge > 0 && (
+                    <span style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', borderRadius: 99, fontSize: 11, fontWeight: 800, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
                 </div>
               )
             })}
@@ -362,6 +399,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
             {/* 메뉴 항목들 */}
             {navItems.map(item => {
               const active = isActive(item.path)
+              const badge = item.id === 'approve' && pendingCount > 0 ? pendingCount : 0
               return (
                 <div
                   key={item.id}
@@ -380,6 +418,11 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
                 >
                   <span style={{ fontSize: 16 }}>{item.icon}</span>
                   {item.label}
+                  {badge > 0 && (
+                    <span style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', borderRadius: 99, fontSize: 12, fontWeight: 800, minWidth: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
                 </div>
               )
             })}

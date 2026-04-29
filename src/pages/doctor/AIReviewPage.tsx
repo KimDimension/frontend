@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { AIQuestionRow, listAIQuestions, rejectAIQuestion } from "../../api/questions";
+import { AIQuestionRow, listAIQuestions, rejectAIQuestion, restoreAIQuestion } from "../../api/questions";
 import { COLOR, btn, card, typography } from "../../styles/doctor";
 
 /* ── 아이콘 ────────────────────────────────────────────────────── */
@@ -37,6 +37,7 @@ export default function AIReviewPage() {
   const [patientFilter, setPatientFilter] = useState<number | "">("");
   const [statusFilter, setStatusFilter]   = useState<string>("pending");
   const [rejecting, setRejecting]         = useState<number | null>(null);
+  const [restoring, setRestoring]         = useState<number | null>(null);
 
   // 나이/성별 헬퍼
   const calcAge = (b: string | null, ref?: string) => {
@@ -182,40 +183,44 @@ export default function AIReviewPage() {
                 </p>
               )}
 
-              {/* 거절 버튼 (pending 상태만 표시) */}
+              {/* 액션 버튼 */}
               {q.status === "pending" && (
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={() => handleReject(q, "patient")}
                     disabled={rejecting === q.id}
-                    style={{
-                      ...btn.sm,
-                      background: "transparent",
-                      border: `1px solid ${COLOR.danger}`,
-                      color: COLOR.danger,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}
+                    style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.danger}`, color: COLOR.danger, display: "inline-flex", alignItems: "center", gap: 4 }}
                   >
                     <IconX /> 이 환자만 거절
                   </button>
                   <button
                     onClick={() => handleReject(q, "global")}
                     disabled={rejecting === q.id}
-                    style={{
-                      ...btn.sm,
-                      background: "transparent",
-                      border: `1px solid ${COLOR.gray}`,
-                      color: COLOR.gray,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                    }}
+                    style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.gray}`, color: COLOR.gray, display: "inline-flex", alignItems: "center", gap: 4 }}
                   >
                     <IconX /> 전역 거절
                   </button>
                 </div>
+              )}
+              {(q.status === "rejected_for_patient" || q.status === "rejected_global") && (
+                <button
+                  onClick={async () => {
+                    if (!window.confirm("이 질문을 검토 대기 상태로 복구하시겠습니까?")) return;
+                    setRestoring(q.id);
+                    try {
+                      await restoreAIQuestion(q.id);
+                      setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, status: "pending" } : item));
+                    } catch {
+                      alert("복구 중 오류가 발생했습니다.");
+                    } finally {
+                      setRestoring(null);
+                    }
+                  }}
+                  disabled={restoring === q.id}
+                  style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.primary}`, color: COLOR.primary }}
+                >
+                  {restoring === q.id ? "복구 중..." : "↩ 복구"}
+                </button>
               )}
             </div>
           ))}

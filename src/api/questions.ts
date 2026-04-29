@@ -97,3 +97,9 @@ export const rejectAIQuestion = (
   client
     .post(`/api/v1/questions/ai/${id}/reject`, { scope })
     .then(() => undefined)
+
+/** AI 질문 복구 (거절 → 검토 대기) */
+export const restoreAIQuestion = (id: number): Promise<void> =>
+  client
+    .post(`/api/v1/questions/ai/${id}/restore`)
+    .then(() => undefined)
