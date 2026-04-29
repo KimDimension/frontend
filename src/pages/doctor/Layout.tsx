@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 const C = {
@@ -43,6 +43,14 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   // 데스크톱: 사이드바 열림 여부 / 모바일: 상단 메뉴 열림 여부
   const [open, setOpen] = useState(!isMobile)
   const [pendingCount, setPendingCount] = useState(0)
+  const prevPendingRef = useRef<number | null>(null)
+
+  // 브라우저 알림 권한 요청 (한 번만)
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
 
   const fetchPendingCount = useCallback(async () => {
     const token = localStorage.getItem('access_token')
@@ -53,7 +61,21 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
       })
       if (res.ok) {
         const data = await res.json()
-        setPendingCount(Array.isArray(data) ? data.length : 0)
+        const cnt = Array.isArray(data) ? data.length : 0
+        setPendingCount(cnt)
+        // 이전 값보다 늘어난 경우 브라우저 알림 발송
+        if (
+          prevPendingRef.current !== null &&
+          cnt > prevPendingRef.current &&
+          'Notification' in window &&
+          Notification.permission === 'granted'
+        ) {
+          new Notification('CAPD — 새 연결 요청', {
+            body: `처리 대기 중인 연결 요청이 ${cnt}건 있습니다.`,
+            icon: '/favicon.ico',
+          })
+        }
+        prevPendingRef.current = cnt
       }
     } catch { /* 무시 */ }
   }, [])

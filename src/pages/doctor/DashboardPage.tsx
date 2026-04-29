@@ -337,7 +337,7 @@ const MOBILE_BP = 768
 
 /* ═══════════════ 환자 카드 (모바일용) ═══════════════ */
 function PatientCard({
-  patient, record, searchQuery, refDate, onCardClick, onNameClick,
+  patient, record, searchQuery, refDate, onCardClick, onNameClick, selected, onToggleSelect,
 }: {
   patient: PatientInfo
   record: TodayRecord | null
@@ -345,24 +345,37 @@ function PatientCard({
   refDate: string
   onCardClick: () => void
   onNameClick: (e: React.MouseEvent) => void
+  selected?: boolean
+  onToggleSelect?: () => void
 }) {
   const summary = extractAiSummary(record?.ai_summary ?? null)
+  const isSubmitted = record?.status === 'submitted'
 
   return (
     <div
       onClick={onCardClick}
       style={{
-        background: '#fff',
-        border: `1px solid ${C.border}`,
+        background: selected ? C.primaryLight : '#fff',
+        border: `1px solid ${selected ? 'var(--capd-primary)' : C.border}`,
         borderRadius: 12,
         padding: '14px 16px',
         cursor: record ? 'pointer' : 'default',
         marginBottom: 8,
         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        transition: 'background 0.1s, border-color 0.1s',
       }}
     >
       {/* 1행: 이름 + 뱃지들 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        {isSubmitted && onToggleSelect && (
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={e => { e.stopPropagation(); onToggleSelect() }}
+            onClick={e => e.stopPropagation()}
+            style={{ width: 15, height: 15, cursor: 'pointer', flexShrink: 0, accentColor: 'var(--capd-primary)' }}
+          />
+        )}
         <span
           onClick={onNameClick}
           className="clickable-name"
@@ -428,6 +441,8 @@ export default function DashboardPage() {
   const [searchQuery,   setSearchQuery]   = useState('')
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all')
   const [isMobile,      setIsMobile]      = useState(window.innerWidth < MOBILE_BP)
+  const [selectedIds,   setSelectedIds]   = useState<Set<number>>(new Set())
+  const [bulkApproving, setBulkApproving] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -455,6 +470,7 @@ export default function DashboardPage() {
   }, [navigate])
 
   useEffect(() => { fetchData(currentDate) }, [fetchData, currentDate])
+  useEffect(() => { setSelectedIds(new Set()) }, [currentDate, statusFilter])
 
   /* ── 날짜 선택 ── */
   const handleSelectDate = (d: Date) => {
@@ -492,6 +508,47 @@ export default function DashboardPage() {
     () => sortedPatientList(statusFiltered, recordMap),
     [statusFiltered, recordMap]
   )
+
+  /* ── 일괄 승인 ── */
+  const submittedDisplayed = useMemo(() =>
+    displayPatients.map(p => recordMap.get(p.id)).filter((r): r is TodayRecord => r?.status === 'submitted'),
+  [displayPatients, recordMap])
+
+  const allSubmittedSelected = submittedDisplayed.length > 0 &&
+    submittedDisplayed.every(r => selectedIds.has(r.record_id))
+
+  const toggleSelectAll = () => {
+    if (allSubmittedSelected) setSelectedIds(new Set())
+    else setSelectedIds(new Set(submittedDisplayed.map(r => r.record_id)))
+  }
+
+  const toggleSelect = useCallback((recordId: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(recordId)) next.delete(recordId) else next.add(recordId)
+      return next
+    })
+  }, [])
+
+  const bulkApprove = useCallback(async () => {
+    if (selectedIds.size === 0) return
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+    setBulkApproving(true)
+    try {
+      const res = await fetch(`${API}/api/v1/records/bulk-approve`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ record_ids: [...selectedIds] }),
+      })
+      if (res.ok) {
+        setSelectedIds(new Set())
+        fetchData(currentDate)
+      }
+    } finally {
+      setBulkApproving(false)
+    }
+  }, [selectedIds, fetchData, currentDate])
 
   /* ── 통계 ── */
   const totalPatients  = stats?.total_patients ?? 0
@@ -626,6 +683,8 @@ export default function DashboardPage() {
               e.stopPropagation()
               navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } })
             }}
+            selected={rec ? selectedIds.has(rec.record_id) : false}
+            onToggleSelect={rec ? () => toggleSelect(rec.record_id) : undefined}
           />
         )
       })}</>
@@ -635,16 +694,28 @@ export default function DashboardPage() {
     <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
+          <col style={{ width: 36 }} />
           <col style={{ width: '13%'  }} />
-          <col style={{ width: '9%'   }} />
-          <col style={{ width: '14%'  }} />
+          <col style={{ width: '8%'   }} />
+          <col style={{ width: '13%'  }} />
           <col style={{ width: '10%'  }} />
           <col style={{ width: '10%'  }} />
-          <col style={{ width: '9%'   }} />
-          <col style={{ width: '35%'  }} />
+          <col style={{ width: '8%'   }} />
+          <col />
         </colgroup>
         <thead>
           <tr style={{ background: C.bg }}>
+            <th style={{ padding: '10px 8px 10px 12px', textAlign: 'center' }}>
+              {submittedDisplayed.length > 0 && (
+                <input
+                  type="checkbox"
+                  checked={allSubmittedSelected}
+                  onChange={toggleSelectAll}
+                  title="미검토 전체 선택"
+                  style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--capd-primary)' }}
+                />
+              )}
+            </th>
             {['환자명', '환자번호', '전화번호', '상태', '위험도', 'AI 질문', 'AI 요약'].map((h, i) => (
               <th key={i} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.textMuted, whiteSpace: 'nowrap' }}>{h}</th>
             ))}
@@ -653,7 +724,7 @@ export default function DashboardPage() {
         <tbody>
           {displayPatients.length === 0 ? (
             <tr>
-              <td colSpan={7} style={{ padding: '40px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>
+              <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', color: C.textMuted, fontSize: 13 }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>{isSearchMode ? '🔍' : '📋'}</div>
                 {loading ? '불러오는 중...' : emptyMessage()}
               </td>
@@ -661,12 +732,14 @@ export default function DashboardPage() {
           ) : displayPatients.map(p => {
             const rec = recordMap.get(p.id) ?? null
             const hasRecord = !!rec
+            const isSubmitted = rec?.status === 'submitted'
+            const isSelected = rec ? selectedIds.has(rec.record_id) : false
             return (
               <tr
                 key={p.id}
                 style={{
                   borderTop: `1px solid ${C.border}`,
-                  background: hoveredRow === p.id ? C.bg : '#fff',
+                  background: isSelected ? C.primaryLight : hoveredRow === p.id ? C.bg : '#fff',
                   transition: 'background 0.1s',
                   cursor: hasRecord ? 'pointer' : 'default',
                 }}
@@ -676,6 +749,16 @@ export default function DashboardPage() {
                   if (hasRecord) navigate('/doctor/record', { state: { recordId: rec!.record_id, patientName: p.name, patientBirthDate: p.birth_date, patientGender: p.gender } })
                 }}
               >
+                <td style={{ padding: '12px 8px 12px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                  {isSubmitted && rec && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(rec.record_id)}
+                      style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--capd-primary)' }}
+                    />
+                  )}
+                </td>
                 <td style={{ padding: '12px 12px', fontWeight: 700, fontSize: 14 }}
                   onClick={e => { e.stopPropagation(); navigate(`/doctor/patients/${p.id}`, { state: { patientName: p.name } }) }}>
                   <span className="clickable-name" style={{ color: C.primaryDark }}>
@@ -801,6 +884,39 @@ export default function DashboardPage() {
 
       {/* 환자 목록 */}
       {PatientList}
+
+      {/* 일괄 승인 플로팅 바 */}
+      {selectedIds.size > 0 && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: '#1a1a2e', color: '#fff',
+          borderRadius: 50, padding: '10px 20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+          zIndex: 1000, whiteSpace: 'nowrap',
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{selectedIds.size}개 선택됨</span>
+          <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.25)' }} />
+          <button
+            onClick={bulkApprove}
+            disabled={bulkApproving}
+            style={{
+              background: 'var(--capd-primary)', color: '#fff',
+              border: 'none', borderRadius: 20, padding: '6px 16px',
+              fontSize: 12, fontWeight: 700, cursor: bulkApproving ? 'wait' : 'pointer',
+              fontFamily: 'inherit', opacity: bulkApproving ? 0.7 : 1,
+            }}
+          >
+            {bulkApproving ? '승인 중...' : '✅ 일괄 승인'}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', borderRadius: 20, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            취소
+          </button>
+        </div>
+      )}
 
       <style>{`
         .clickable-name { display: inline-block; cursor: pointer; transition: color 0.12s; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
