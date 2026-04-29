@@ -525,7 +525,7 @@ export default function DashboardPage() {
   const toggleSelect = useCallback((recordId: number) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
-      if (next.has(recordId)) next.delete(recordId) else next.add(recordId)
+      if (next.has(recordId)) next.delete(recordId); else next.add(recordId)
       return next
     })
   }, [])
