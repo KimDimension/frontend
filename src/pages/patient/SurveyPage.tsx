@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import client from '../../api/client'
+import { useToast } from '../../hooks/useToast'
 
 // ── 타입 ──────────────────────────────────────────────────
 
@@ -155,8 +156,7 @@ function CommonQuestionItem({ question, answer, onChange }: {
             style={textInputStyle}
             value={answer.text}
             onChange={e => onChange(question.question_id, 'common', { text: e.target.value })}
-            onFocus={e => { e.target.style.borderColor = 'var(--capd-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(123,107,181,0.10)' }}
-            onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none' }}
+            className="capd-input"
           />
         </div>
       )}
@@ -182,8 +182,7 @@ function CommonQuestionItem({ question, answer, onChange }: {
             style={{ ...textInputStyle, width: '100%', flex: 'unset', minWidth: 'unset', marginTop: 4 }}
             value={answer.text}
             onChange={e => onChange(question.question_id, 'common', { text: e.target.value })}
-            onFocus={e => { e.target.style.borderColor = 'var(--capd-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(123,107,181,0.10)' }}
-            onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none' }}
+            className="capd-input"
           />
         </div>
       )}
@@ -216,8 +215,7 @@ function CommonQuestionItem({ question, answer, onChange }: {
             style={{ ...textInputStyle, width: '100%', flex: 'unset', minWidth: 'unset', marginTop: 4 }}
             value={answer.text}
             onChange={e => onChange(question.question_id, 'common', { text: e.target.value })}
-            onFocus={e => { e.target.style.borderColor = 'var(--capd-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(123,107,181,0.10)' }}
-            onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none' }}
+            className="capd-input"
           />
         </div>
       )}
@@ -280,8 +278,7 @@ function AIQuestionItem({ question, answer, onChange }: {
             style={textInputStyle}
             value={answer.text}
             onChange={e => onChange(question.question_id, 'ai', { text: e.target.value })}
-            onFocus={e => { e.target.style.borderColor = 'var(--capd-primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(123,107,181,0.10)' }}
-            onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none' }}
+            className="capd-input"
           />
         </div>
       )}
@@ -433,7 +430,7 @@ export default function SurveyPage() {
   const [aiPending,  setAiPending]   = useState(false)
   const [saving,     setSaving]      = useState(false)
   const [completing, setCompleting]  = useState(false)
-  const [saveMsg,    setSaveMsg]     = useState<'success' | 'error' | null>(null)
+  const saveToast = useToast(3000)
   const [completeError, setCompleteError] = useState('')
 
   // ── 질문 + 기존 답변 로드 ───────────────────────────────
@@ -524,7 +521,7 @@ export default function SurveyPage() {
   async function handleSave() {
     if (!recordId) return
     setSaving(true)
-    setSaveMsg(null)
+    saveToast.hide()
 
     const responses: object[] = []
 
@@ -570,11 +567,10 @@ export default function SurveyPage() {
 
     try {
       await client.post('/api/v1/surveys/responses', { record_id: recordId, responses })
-      setSaveMsg('success')
+      saveToast.show('success')
       await loadAll()
-      setTimeout(() => setSaveMsg(null), 3000)
     } catch {
-      setSaveMsg('error')
+      saveToast.show('error')
     } finally {
       setSaving(false)
     }
@@ -699,13 +695,13 @@ export default function SurveyPage() {
         ) : (
           <>
             {/* 알림 메시지 */}
-            {saveMsg === 'success' && (
-              <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 14, backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, color: '#16a34a', fontWeight: 500 }}>
+            {saveToast.message === 'success' && (
+              <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 14, backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, color: 'var(--success)', fontWeight: 500 }}>
                 ✓ 답변이 저장되었습니다.
               </div>
             )}
-            {saveMsg === 'error' && (
-              <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 14, backgroundColor: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#dc2626' }}>
+            {saveToast.message === 'error' && (
+              <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 14, backgroundColor: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: 'var(--danger)' }}>
                 ⚠ 저장에 실패했습니다. 다시 시도해 주세요.
               </div>
             )}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useToast } from '../../hooks/useToast'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -96,7 +97,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [origNote,    setOrigNote]    = useState('')
   const [loading,     setLoading]     = useState(true)
   const [saving,      setSaving]      = useState(false)
-  const [saved,       setSaved]       = useState(false)
+  const saveToast = useToast(2000)
   const [discharging, setDischarging] = useState(false)
   const [err,         setErr]         = useState('')
   const [trend,       setTrend]       = useState<TrendPoint[]>([])
@@ -134,7 +135,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
         body: JSON.stringify({ content: note }),
       })
       if (!res.ok) throw new Error('저장 실패')
-      setOrigNote(note); setSaved(true); setTimeout(() => setSaved(false), 2000)
+      setOrigNote(note); saveToast.show('saved')
     } catch (e: any) { alert(e.message) } finally { setSaving(false) }
   }
 
@@ -287,8 +288,8 @@ td{padding:6px 8px;border:1px solid #e5e7eb;font-size:11px;vertical-align:top}tr
                     <p style={{ margin: '3px 0 0', fontSize: 11, color: C.textMuted }}>환자에게 비공개 · AI 질문 생성에 활용</p>
                   </div>
                   <button onClick={handleSaveNote} disabled={saving || !noteChanged}
-                    style={{ background: saved ? C.success : noteChanged ? C.primary : '#e5e7eb', color: noteChanged || saved ? '#fff' : C.textMuted, border: 'none', borderRadius: 7, padding: '6px 14px', cursor: noteChanged ? 'pointer' : 'default', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.15s' }}>
-                    {saving ? '저장 중...' : saved ? '✓ 저장됨' : '저장'}
+                    style={{ background: saveToast.message ? C.success : noteChanged ? C.primary : '#e5e7eb', color: noteChanged || saveToast.message ? '#fff' : C.textMuted, border: 'none', borderRadius: 7, padding: '6px 14px', cursor: noteChanged ? 'pointer' : 'default', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.15s' }}>
+                    {saving ? '저장 중...' : saveToast.message ? '✓ 저장됨' : '저장'}
                   </button>
                 </div>
                 <textarea value={note} onChange={e => setNote(e.target.value)}

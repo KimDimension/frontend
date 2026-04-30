@@ -566,8 +566,7 @@ export default function RecordForm({
                 opacity: isDraftLoading ? 0.6 : 1,
                 fontFamily: 'inherit', transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { if (!isDraftLoading) e.currentTarget.style.background = C.primaryLight }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
+              className="capd-btn-outline-hover"
             >
               {isDraftLoading ? '저장 중...' : '오늘 기록 저장'}
             </button>
@@ -586,8 +585,7 @@ export default function RecordForm({
                 opacity: isFinalLoading ? 0.6 : 1,
                 fontFamily: 'inherit', transition: 'opacity 0.15s',
               }}
-              onMouseEnter={e => { if (!isFinalLoading) e.currentTarget.style.opacity = '0.85' }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+              className="capd-btn-hover"
             >
               {isFinalLoading ? '제출 중...' : '최종 제출하기 →'}
             </button>

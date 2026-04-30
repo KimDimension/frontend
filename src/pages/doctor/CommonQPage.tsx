@@ -124,8 +124,7 @@ function OptionsEditor({ options, onChange }: {
             value={opt}
             onChange={(e) => updateOption(idx, e.target.value)}
             style={{ ...inputStyle, flex: 1, padding: "6px 10px" }}
-            onFocus={(e) => (e.target.style.borderColor = COLOR.primary)}
-            onBlur={(e) => (e.target.style.borderColor = COLOR.grayLight)}
+            className="capd-input"
           />
           <button type="button" title="선택지 삭제"
             style={iconBtn(COLOR.danger, "#fff1f2")} onClick={() => removeOption(idx)}>

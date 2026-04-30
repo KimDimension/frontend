@@ -64,3 +64,36 @@ textarea,
 select {
   font-family: inherit;
 }
+
+/* ── 공통 입력 포커스 스타일 (onFocus/onBlur DOM 조작 대체) ── */
+.capd-input:focus {
+  outline: none;
+  border-color: var(--capd-primary) !important;
+  box-shadow: 0 0 0 3px rgba(123, 107, 181, 0.10) !important;
+}
+
+/* ── 버튼 호버 투명도 (onMouseEnter/onMouseLeave 대체) ── */
+.capd-btn-hover:hover {
+  opacity: 0.85;
+}
+.capd-btn-hover:active {
+  opacity: 0.75;
+}
+
+/* ── 아웃라인 버튼 호버 (배경색 변경, onMouseEnter/onMouseLeave 대체) ── */
+.capd-btn-outline-hover:hover {
+  background: var(--capd-primary-light) !important;
+}
+
+/* ── 버튼 호버 리프트 (opacity + translateY, onMouseEnter/onMouseLeave 대체) ── */
+.capd-btn-lift {
+  transition: opacity 0.15s, transform 0.15s;
+}
+.capd-btn-lift:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+.capd-btn-lift:active {
+  opacity: 1;
+  transform: translateY(0);
+}

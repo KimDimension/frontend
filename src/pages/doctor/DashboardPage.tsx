@@ -892,7 +892,7 @@ export default function DashboardPage() {
         <PatientDrawer
           patientId={drawerPatientId}
           onClose={() => setDrawerPatientId(null)}
-          onDischarge={() => {}}
+          onDischarge={() => { fetchData(currentDate) }}
           navigate={navigate}
         />
       )}

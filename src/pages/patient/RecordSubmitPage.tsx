@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../../hooks/useToast'
 import {
   submitRecord,
   updateRecord,
@@ -54,7 +55,7 @@ export default function RecordSubmitPage() {
   const [todayRecord, setTodayRecord]     = useState<DailyRecordResponse | null>(null)
   const [draftLoading, setDraftLoading]   = useState(false)
   const [finalLoading, setFinalLoading]   = useState(false)
-  const [saveSuccess, setSaveSuccess]     = useState(false)
+  const saveToast = useToast(2500)
   const [error, setError]                 = useState<string | null>(null)
 
   /* ── 오늘 기록 확인 ─────────────────────────────────────────── */
@@ -77,7 +78,7 @@ export default function RecordSubmitPage() {
   const handleDraftSave = async (data: DailyRecordCreate) => {
     setDraftLoading(true)
     setError(null)
-    setSaveSuccess(false)
+    saveToast.hide()
     try {
       if (todayRecord) {
         // 기존 기록 업데이트
@@ -98,8 +99,7 @@ export default function RecordSubmitPage() {
         const record = await submitRecord(data)
         setTodayRecord(record)
       }
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 2500)
+      saveToast.show('저장되었습니다.')
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
@@ -225,12 +225,12 @@ export default function RecordSubmitPage() {
           </div>
 
           {/* 저장 성공 메시지 */}
-          {saveSuccess && (
+          {saveToast.message && (
             <div style={{
               marginTop: 12, padding: '9px 14px',
               backgroundColor: '#f0fdf4', borderRadius: 8,
               border: '1px solid #bbf7d0',
-              fontSize: 13, color: '#16a34a',
+              fontSize: 13, color: 'var(--success)',
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               ✓ 오늘 기록이 저장되었습니다. 나중에 이어서 입력할 수 있어요.
@@ -262,8 +262,7 @@ export default function RecordSubmitPage() {
                 fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 transition: 'opacity 0.15s', fontFamily: 'inherit',
               }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              className="capd-btn-hover"
               onClick={() => navigate('/patient/survey', { state: { recordId: todayRecord!.id } })}
             >
               후속 설문 답변하기 →

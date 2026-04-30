@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useToast } from '../../hooks/useToast'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 const MOBILE_BP = 768
@@ -83,7 +84,7 @@ export default function DoctorMyPage() {
   const [newPw,      setNewPw]      = useState('')
   const [confirmPw,  setConfirmPw]  = useState('')
   const [saving,     setSaving]     = useState(false)
-  const [saved,      setSaved]      = useState(false)
+  const saveToast = useToast(2000)
   const [formError,  setFormError]  = useState('')
 
   const token = () => localStorage.getItem('access_token') ?? ''
@@ -157,7 +158,7 @@ export default function DoctorMyPage() {
       const data = await patch(body)
       setProfile(p => p ? { ...p, name: data.name ?? name, birth_date: birth || null, phone_number: phone } : p)
       if (data.name) localStorage.setItem('user_name', data.name)
-      setSaved(true); setTimeout(() => setSaved(false), 2000)
+      saveToast.show('saved')
       setEditMode(false)
     } catch (e: any) { setFormError(e.message) } finally { setSaving(false) }
   }
@@ -232,12 +233,12 @@ export default function DoctorMyPage() {
             }}>취소</button>
             <button onClick={handleSave} disabled={saving} style={{
               padding: '7px 18px', borderRadius: 8, border: 'none',
-              background: saved ? C.success : saving ? '#e5e7eb' : C.primary,
+              background: saveToast.message ? C.success : saving ? '#e5e7eb' : C.primary,
               color: saving ? C.textMuted : '#fff',
               fontSize: 13, fontWeight: 700, cursor: saving ? 'default' : 'pointer',
               fontFamily: 'inherit', transition: 'all 0.15s',
             }}>
-              {saving ? '저장 중...' : saved ? '✓ 저장됨' : '저장'}
+              {saving ? '저장 중...' : saveToast.message ? '✓ 저장됨' : '저장'}
             </button>
           </div>
         </div>

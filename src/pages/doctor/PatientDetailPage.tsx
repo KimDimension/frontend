@@ -10,6 +10,7 @@
  */
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
+import { useToast } from '../../hooks/useToast'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
@@ -81,7 +82,7 @@ export default function PatientDetailPage() {
   const [origNote, setOrigNote] = useState('')
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
-  const [saved,    setSaved]    = useState(false)
+  const saveToast = useToast(2000)
   const [error,    setError]    = useState('')
 
   const token = () => localStorage.getItem('access_token') ?? ''
@@ -121,8 +122,7 @@ export default function PatientDetailPage() {
       })
       if (!res.ok) throw new Error('저장 실패')
       setOrigNote(note)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      saveToast.show('saved')
     } catch (e: any) {
       alert(e.message)
     } finally {
@@ -212,15 +212,15 @@ export default function PatientDetailPage() {
             onClick={handleSaveNote}
             disabled={saving || !noteChanged}
             style={{
-              background: saved ? C.success : noteChanged ? C.primary : '#e5e7eb',
-              color: noteChanged || saved ? '#fff' : C.textMuted,
+              background: saveToast.message ? C.success : noteChanged ? C.primary : '#e5e7eb',
+              color: noteChanged || saveToast.message ? '#fff' : C.textMuted,
               border: 'none', borderRadius: 8, padding: '7px 16px',
               cursor: noteChanged ? 'pointer' : 'default',
               fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
               transition: 'all 0.15s',
             }}
           >
-            {saving ? '저장 중...' : saved ? '✓ 저장됨' : '저장'}
+            {saving ? '저장 중...' : saveToast.message ? '✓ 저장됨' : '저장'}
           </button>
         </div>
         <textarea

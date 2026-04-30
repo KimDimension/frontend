@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useToast } from '../../hooks/useToast'
 import {
   getHospitals, getDoctors,
   patientConnectRequest, getMyPendingRequest, cancelMyRequest, patientDischargeRequest,
@@ -108,7 +109,7 @@ export default function PatientMyPage() {
   const [newPw,    setNewPw]    = useState('')
   const [confirmPw, setConfirmPw] = useState('')
   const [saving,   setSaving]   = useState(false)
-  const [saved,    setSaved]    = useState(false)
+  const saveToast = useToast(2000)
   const [formError, setFormError] = useState('')
 
   // 담당의사
@@ -207,7 +208,7 @@ export default function PatientMyPage() {
         self_memo:    memo,
       } : p)
       if (data.name) localStorage.setItem('user_name', data.name)
-      setSaved(true); setTimeout(() => setSaved(false), 2000)
+      saveToast.show('saved')
       setEditMode(false)
     } catch (e: any) { setFormError(e.message) } finally { setSaving(false) }
   }
@@ -377,12 +378,12 @@ export default function PatientMyPage() {
             }}>취소</button>
             <button onClick={handleSave} disabled={saving} style={{
               padding: '7px 18px', borderRadius: 8, border: 'none',
-              background: saved ? C.success : saving ? '#e5e7eb' : C.primary,
+              background: saveToast.message ? C.success : saving ? '#e5e7eb' : C.primary,
               color: saving ? C.textMuted : '#fff',
               fontSize: 13, fontWeight: 700, cursor: saving ? 'default' : 'pointer',
               fontFamily: 'inherit', transition: 'all 0.15s',
             }}>
-              {saving ? '저장 중...' : saved ? '✓ 저장됨' : '저장'}
+              {saving ? '저장 중...' : saveToast.message ? '✓ 저장됨' : '저장'}
             </button>
           </div>
         </div>

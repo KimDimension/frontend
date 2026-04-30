@@ -57,15 +57,8 @@ export default function SurveyDonePage() {
             transition: 'opacity 0.15s, transform 0.1s',
             fontFamily: 'inherit',
           }}
+          className="capd-btn-lift"
           onClick={() => navigate('/patient')}
-          onMouseEnter={e => {
-            e.currentTarget.style.opacity = '0.88'
-            e.currentTarget.style.transform = 'translateY(-1px)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.opacity = '1'
-            e.currentTarget.style.transform = 'translateY(0)'
-          }}
         >
           홈으로 돌아가기
         </button>
