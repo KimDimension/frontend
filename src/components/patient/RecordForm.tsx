@@ -4,7 +4,6 @@ import type { DailyRecordCreate, DailyRecordResponse, ExchangeRecord } from '../
 const C = {
   primary:      'var(--capd-primary)',
   primaryLight: 'var(--capd-primary-light)',
-  primaryDark:  'var(--capd-primary-dark)',
   bg:           'var(--capd-bg)',
   border:       'var(--capd-border)',
   text:         '#1a1a2e',
@@ -15,7 +14,6 @@ const C = {
 const CONC_OPTIONS = [1.5, 2.5, 4.25]
 const SESSIONS = [1, 2, 3, 4, 5]
 
-// ── 빈 교환 기록 초기값 ────────────────────────────────────────
 const emptyExchange = (session_number: number): ExchangeRecord => ({
   session_number,
   exchange_time: '',
@@ -27,12 +25,15 @@ const emptyExchange = (session_number: number): ExchangeRecord => ({
 
 const todayStr = () => new Date().toISOString().split('T')[0]
 
-// 제수량 자동 계산: 배액량 - 주입량
 const calcUF = (ex: ExchangeRecord): number | undefined => {
-  if (ex.drainage_volume !== undefined && ex.infusion_weight !== undefined) {
+  if (ex.drainage_volume !== undefined && ex.infusion_weight !== undefined)
     return ex.drainage_volume - ex.infusion_weight
-  }
   return undefined
+}
+
+const nowTimeStr = () => {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 interface Props {
@@ -44,6 +45,114 @@ interface Props {
   isReadOnly?: boolean
 }
 
+// ── 스테퍼 컴포넌트 ──────────────────────────────────────────────
+function Stepper({
+  label, value, onChange, step, min, unit, readOnly, displayValue,
+}: {
+  label: string
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+  step: number
+  min: number
+  unit: string
+  readOnly?: boolean
+  displayValue?: string
+}) {
+  const shown = value !== undefined ? `${value}${unit}` : (displayValue ?? '—')
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+        {label}
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => {
+              const cur = value ?? 0
+              const next = Math.max(min, Math.round((cur - step) * 10) / 10)
+              onChange(next === 0 && min === 0 ? undefined : next)
+            }}
+            style={{
+              width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+              border: `1.5px solid ${C.border}`, background: '#fff',
+              fontSize: 22, fontWeight: 300, color: C.textMuted,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >−</button>
+        )}
+        <div style={{
+          flex: 1, height: 48, borderRadius: 12,
+          border: `1.5px solid ${C.border}`,
+          background: readOnly ? C.bg : '#f8f5ff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, fontWeight: 700, color: value !== undefined ? C.text : C.textLight,
+        }}>
+          {shown}
+        </div>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => {
+              const cur = value ?? (min > 0 ? min : 0)
+              onChange(Math.round((cur + step) * 10) / 10)
+            }}
+            style={{
+              width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+              border: `1.5px solid ${C.primary}`, background: C.primary,
+              fontSize: 22, fontWeight: 300, color: '#fff',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >+</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── 큰 입력 필드 ─────────────────────────────────────────────────
+function BigField({
+  label, placeholder, value, onChange, readOnly, unit,
+}: {
+  label: string
+  placeholder?: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  readOnly?: boolean
+  unit?: string
+}) {
+  const [focused, setFocused] = useState(false)
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+        {label}
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          readOnly={readOnly}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={{
+            flex: 1, height: 52, padding: '0 14px', borderRadius: 12,
+            border: `1.5px solid ${focused ? 'var(--capd-primary)' : 'var(--capd-border)'}`,
+            fontSize: 16, fontFamily: 'inherit', color: C.text,
+            background: readOnly ? C.bg : '#fff',
+            outline: 'none', transition: 'border-color 0.15s',
+            boxSizing: 'border-box',
+          }}
+        />
+        {unit && <span style={{ fontSize: 14, color: C.textMuted, flexShrink: 0 }}>{unit}</span>}
+      </div>
+    </div>
+  )
+}
+
 export default function RecordForm({
   onDraftSave,
   onFinalSubmit,
@@ -53,8 +162,8 @@ export default function RecordForm({
   isReadOnly = false,
 }: Props) {
   const [submitWarning, setSubmitWarning] = useState(false)
+  const [activeSession, setActiveSession] = useState(0)
 
-  // ── 교환 기록 초기화 ───────────────────────────────────────────
   const initExchanges = (): ExchangeRecord[] => {
     const base = SESSIONS.map(emptyExchange)
     if (!initialData) return base
@@ -80,79 +189,66 @@ export default function RecordForm({
     return { sys: parts[0] ?? '', dia: parts[1] ?? '' }
   }
 
-  const [exchanges, setExchanges]         = useState<ExchangeRecord[]>(initExchanges)
-  const [turbidPeritoneal, setTurbid]     = useState(initialData?.turbid_peritoneal ?? false)
-  const [weight, setWeight]               = useState(initialData?.weight?.toString() ?? '')
-  const [bpSystolic, setBpSystolic]       = useState(initBp().sys)
-  const [bpDiastolic, setBpDiastolic]     = useState(initBp().dia)
-  const [urineCount, setUrineCount]       = useState(initialData?.urine_count?.toString() ?? '')
-  const [fastingGlucose, setFasting]      = useState(initialData?.fasting_blood_glucose?.toString() ?? '')
-  const [memo, setMemo]                   = useState(initialData?.memo ?? '')
+  const [exchanges, setExchanges]     = useState<ExchangeRecord[]>(initExchanges)
+  const [turbidPeritoneal, setTurbid] = useState(initialData?.turbid_peritoneal ?? false)
+  const [weight, setWeight]           = useState<number | undefined>(initialData?.weight ?? undefined)
+  const [bpSystolic, setBpSystolic]   = useState(initBp().sys)
+  const [bpDiastolic, setBpDiastolic] = useState(initBp().dia)
+  const [urineCount, setUrineCount]   = useState<number | undefined>(initialData?.urine_count ?? undefined)
+  const [fastingGlucose, setFasting]  = useState(initialData?.fasting_blood_glucose?.toString() ?? '')
+  const [memo, setMemo]               = useState(initialData?.memo ?? '')
 
-  // ── 수치 소프트 경고 (블락 아님, 참고용) ──────────────────────
+  // 교환 기록 필드 업데이트
+  const updateExchange = (idx: number, patch: Partial<ExchangeRecord>) => {
+    if (isReadOnly) return
+    setExchanges(prev => {
+      const next = [...prev]
+      next[idx] = { ...next[idx], ...patch }
+      return next
+    })
+  }
+
+  const totalUltrafiltration = exchanges.reduce((sum, ex) => sum + (calcUF(ex) ?? 0), 0)
+
+  const isFilled = (ex: ExchangeRecord) =>
+    !!(ex.exchange_time || ex.drainage_volume !== undefined ||
+       ex.infusion_concentration !== undefined || ex.infusion_weight !== undefined)
+
   const softWarnings = useMemo(() => {
     if (isReadOnly) return []
     const warns: string[] = []
     const sys = parseInt(bpSystolic, 10)
     const dia = parseInt(bpDiastolic, 10)
     if (!isNaN(sys) && bpSystolic !== '') {
-      if (sys > 200) warns.push(`수축기 혈압 ${sys} mmHg — 매우 높습니다. 값을 다시 확인해 주세요.`)
-      else if (sys < 70) warns.push(`수축기 혈압 ${sys} mmHg — 매우 낮습니다. 값을 다시 확인해 주세요.`)
+      if (sys > 200) warns.push(`수축기 혈압 ${sys} mmHg — 매우 높습니다.`)
+      else if (sys < 70) warns.push(`수축기 혈압 ${sys} mmHg — 매우 낮습니다.`)
     }
     if (!isNaN(dia) && bpDiastolic !== '') {
-      if (dia > 130) warns.push(`이완기 혈압 ${dia} mmHg — 매우 높습니다. 값을 다시 확인해 주세요.`)
-      else if (dia < 40) warns.push(`이완기 혈압 ${dia} mmHg — 매우 낮습니다. 값을 다시 확인해 주세요.`)
+      if (dia > 130) warns.push(`이완기 혈압 ${dia} mmHg — 매우 높습니다.`)
+      else if (dia < 40) warns.push(`이완기 혈압 ${dia} mmHg — 매우 낮습니다.`)
     }
-    const wt = parseFloat(weight)
-    if (!isNaN(wt) && weight !== '') {
-      if (wt > 200) warns.push(`체중 ${wt} kg — 값을 다시 확인해 주세요.`)
-      else if (wt < 20) warns.push(`체중 ${wt} kg — 값을 다시 확인해 주세요.`)
+    if (weight !== undefined) {
+      if (weight > 200) warns.push(`체중 ${weight} kg — 값을 다시 확인해 주세요.`)
+      else if (weight < 20) warns.push(`체중 ${weight} kg — 값을 다시 확인해 주세요.`)
     }
     const bg = parseFloat(fastingGlucose)
     if (!isNaN(bg) && fastingGlucose !== '') {
-      if (bg > 500) warns.push(`공복혈당 ${bg} mg/dL — 매우 높습니다. 값을 다시 확인해 주세요.`)
-      else if (bg < 40) warns.push(`공복혈당 ${bg} mg/dL — 매우 낮습니다. 값을 다시 확인해 주세요.`)
+      if (bg > 500) warns.push(`공복혈당 ${bg} mg/dL — 매우 높습니다.`)
+      else if (bg < 40) warns.push(`공복혈당 ${bg} mg/dL — 매우 낮습니다.`)
     }
     return warns
   }, [bpSystolic, bpDiastolic, weight, fastingGlucose, isReadOnly])
 
-  // ── 교환 기록 셀 변경 핸들러 ──────────────────────────────────
-  const handleExchange = (sessionIdx: number, field: keyof ExchangeRecord, value: string) => {
-    if (isReadOnly) return
-    setExchanges(prev => {
-      const next = [...prev]
-      const rec  = { ...next[sessionIdx] }
-      if (field === 'exchange_time') {
-        rec.exchange_time = value
-      } else {
-        const num = value === '' ? undefined : parseFloat(value)
-        ;(rec as Record<string, unknown>)[field] = num
-      }
-      next[sessionIdx] = rec
-      return next
-    })
-  }
-
-  // 총 제수량 (auto-calc 합계)
-  const totalUltrafiltration = exchanges.reduce((sum, ex) => sum + (calcUF(ex) ?? 0), 0)
-
-  // ── 공통 페이로드 빌더 ─────────────────────────────────────────
   const buildPayload = (): DailyRecordCreate => {
     const validExchanges = exchanges
-      .filter(ex =>
-        ex.exchange_time ||
-        ex.drainage_volume !== undefined ||
-        ex.infusion_concentration !== undefined ||
-        ex.infusion_weight !== undefined
-      )
+      .filter(isFilled)
       .map(ex => ({ ...ex, ultrafiltration: calcUF(ex) }))
-
     return {
       record_date:           todayStr(),
       turbid_peritoneal:     turbidPeritoneal,
-      weight:                weight ? parseFloat(weight) : undefined,
+      weight:                weight,
       blood_pressure:        bpSystolic && bpDiastolic ? `${bpSystolic}/${bpDiastolic}` : undefined,
-      urine_count:           urineCount ? parseInt(urineCount, 10) : undefined,
+      urine_count:           urineCount,
       total_ultrafiltration: totalUltrafiltration || undefined,
       fasting_blood_glucose: fastingGlucose ? parseFloat(fastingGlucose) : undefined,
       memo:                  memo || undefined,
@@ -160,12 +256,7 @@ export default function RecordForm({
     }
   }
 
-  const filledExchangeCount = exchanges.filter(ex =>
-    ex.exchange_time ||
-    ex.drainage_volume !== undefined ||
-    ex.infusion_concentration !== undefined ||
-    ex.infusion_weight !== undefined
-  ).length
+  const filledCount = exchanges.filter(isFilled).length
 
   const handleDraftSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -180,227 +271,253 @@ export default function RecordForm({
   }
 
   const handleFinalClick = () => {
-    if (filledExchangeCount < 3) setSubmitWarning(true)
+    if (filledCount < 3) setSubmitWarning(true)
     else handleFinalSubmit()
   }
 
-  // ── 셀 인풋 공통 스타일 ────────────────────────────────────────
-  const cellInputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '5px 1px',
-    border: `1px solid ${C.border}`,
-    borderRadius: 5,
-    fontSize: 11,
-    textAlign: 'center',
-    fontFamily: 'inherit',
-    color: C.text,
-    background: isReadOnly ? C.bg : '#fff',
-    outline: 'none',
-    boxSizing: 'border-box',
-    minWidth: 0,
-  }
-
-  const thStyle: React.CSSProperties = {
-    padding: '8px 2px',
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#fff',
-    background: C.primary,
-    textAlign: 'center',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-  }
-
-  const tdLabelStyle: React.CSSProperties = {
-    padding: '8px 6px',
-    fontSize: 10,
-    fontWeight: 600,
-    color: C.textMuted,
-    background: C.bg,
-    borderRight: `1px solid ${C.border}`,
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-  }
-
-  const tdCellStyle: React.CSSProperties = {
-    padding: '4px 2px',
-    borderRight: `1px solid ${C.border}`,
-    textAlign: 'center',
-    overflow: 'hidden',
-  }
-
-  const tdUFStyle = (val: number | undefined): React.CSSProperties => ({
-    ...tdCellStyle,
-    background: val !== undefined
-      ? val >= 0 ? '#f0fdf4' : '#fef2f2'
-      : C.bg,
-  })
+  const ex = exchanges[activeSession]
+  const uf = calcUF(ex)
 
   return (
-    <form onSubmit={handleDraftSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form onSubmit={handleDraftSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* ── 투석 교환 기록 테이블 ───────────────────────────────── */}
+      {/* ── 투석 교환 기록 — 탭 카드 ─────────────────────────────── */}
       <div style={{
-        background: '#fff',
-        borderRadius: 14,
+        background: '#fff', borderRadius: 16,
         border: `1px solid ${C.border}`,
         overflow: 'hidden',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
       }}>
-        <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.text }}>투석 교환 기록</h2>
+        {/* 섹션 헤더 */}
+        <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>투석 교환 기록</h2>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: C.textMuted }}>
+            총 {filledCount}회 입력됨
+            {totalUltrafiltration > 0 && (
+              <span style={{ marginLeft: 10, color: C.primary, fontWeight: 700 }}>
+                총 제수량 {totalUltrafiltration}g
+              </span>
+            )}
+          </p>
         </div>
-        <div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-            <colgroup>
-              <col style={{ width: '22%' }} />{/* 항목 */}
-              <col style={{ width: '15.6%' }} />{/* 1회차 */}
-              <col style={{ width: '15.6%' }} />{/* 2회차 */}
-              <col style={{ width: '15.6%' }} />{/* 3회차 */}
-              <col style={{ width: '15.6%' }} />{/* 4회차 */}
-              <col style={{ width: '15.6%' }} />{/* 5회차 */}
-            </colgroup>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 10 }}>항목</th>
-                {SESSIONS.map(n => (
-                  <th key={n} style={thStyle}>{n}회차</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {/* 교환 시간 */}
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={tdLabelStyle}>시간</td>
-                {exchanges.map((ex, i) => (
-                  <td key={i} style={tdCellStyle}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="--:--"
-                      maxLength={5}
-                      value={ex.exchange_time ?? ''}
-                      onChange={e => {
-                        let v = e.target.value.replace(/[^0-9:]/g, '')
-                        if (v.length === 2 && !v.includes(':') && (ex.exchange_time ?? '').length < 2) v = v + ':'
-                        handleExchange(i, 'exchange_time', v)
-                      }}
-                      readOnly={isReadOnly}
-                      style={cellInputStyle}
-                    />
-                  </td>
-                ))}
-              </tr>
-              {/* 농도 */}
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={tdLabelStyle}>농도 (%)</td>
-                {exchanges.map((ex, i) => (
-                  <td key={i} style={tdCellStyle}>
-                    {isReadOnly ? (
-                      <span style={{ fontSize: 13, color: C.text }}>{ex.infusion_concentration ?? '—'}</span>
-                    ) : (
-                      <select
-                        value={ex.infusion_concentration ?? ''}
-                        onChange={e => handleExchange(i, 'infusion_concentration', e.target.value)}
-                        style={{ ...cellInputStyle, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}
-                      >
-                        <option value="">—</option>
-                        {CONC_OPTIONS.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    )}
-                  </td>
-                ))}
-              </tr>
-              {/* 주입량 */}
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={tdLabelStyle}>주입량 (g)</td>
-                {exchanges.map((ex, i) => (
-                  <td key={i} style={tdCellStyle}>
-                    <input
-                      type="number"
-                      placeholder="—"
-                      min="0"
-                      value={ex.infusion_weight ?? ''}
-                      onChange={e => handleExchange(i, 'infusion_weight', e.target.value)}
-                      readOnly={isReadOnly}
-                      style={cellInputStyle}
-                    />
-                  </td>
-                ))}
-              </tr>
-              {/* 배액량 */}
-              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={tdLabelStyle}>배액량 (g)</td>
-                {exchanges.map((ex, i) => (
-                  <td key={i} style={tdCellStyle}>
-                    <input
-                      type="number"
-                      placeholder="—"
-                      min="0"
-                      value={ex.drainage_volume ?? ''}
-                      onChange={e => handleExchange(i, 'drainage_volume', e.target.value)}
-                      readOnly={isReadOnly}
-                      style={cellInputStyle}
-                    />
-                  </td>
-                ))}
-              </tr>
-              {/* 제수량 (자동 계산) */}
-              <tr>
-                <td style={{ ...tdLabelStyle, color: C.primary, fontWeight: 700 }}>제수량 (g)</td>
-                {exchanges.map((ex, i) => {
-                  const uf = calcUF(ex)
-                  return (
-                    <td key={i} style={tdUFStyle(uf)}>
-                      <span style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: uf === undefined ? C.textLight
-                          : uf >= 0 ? '#16a34a'
-                          : '#dc2626',
-                      }}>
-                        {uf !== undefined ? uf : '—'}
-                      </span>
-                    </td>
-                  )
-                })}
-              </tr>
-            </tbody>
-          </table>
+
+        {/* 회차 탭 */}
+        <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, background: C.bg }}>
+          {SESSIONS.map((n, i) => {
+            const filled = isFilled(exchanges[i])
+            const active = activeSession === i
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setActiveSession(i)}
+                style={{
+                  flex: 1, padding: '12px 4px',
+                  background: active ? '#fff' : 'transparent',
+                  border: 'none',
+                  borderBottom: active ? `2.5px solid ${C.primary}` : '2.5px solid transparent',
+                  color: active ? C.primary : C.textMuted,
+                  fontSize: 14, fontWeight: active ? 700 : 500,
+                  cursor: 'pointer', position: 'relative',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {n}회
+                {filled && (
+                  <span style={{
+                    position: 'absolute', top: 8, right: '50%', transform: 'translateX(8px)',
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: active ? C.primary : '#22c55e',
+                  }} />
+                )}
+              </button>
+            )
+          })}
         </div>
-        <div style={{ padding: '10px 16px', borderTop: `1px solid ${C.border}`, background: C.bg }}>
-          <span style={{ fontSize: 12, color: C.textMuted }}>
-            💡 제수량 = 배액량 − 주입량 (자동 계산)
-          </span>
-          {totalUltrafiltration > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.primary, marginLeft: 12 }}>
-              총 제수량: {totalUltrafiltration}g
-            </span>
+
+        {/* 현재 회차 입력 카드 */}
+        <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* 시간 */}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+              교환 시간
+            </label>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{
+                flex: 1, height: 52, borderRadius: 12,
+                border: `1.5px solid ${C.border}`,
+                background: isReadOnly ? C.bg : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20, fontWeight: 700,
+                color: ex.exchange_time ? C.text : C.textLight,
+              }}>
+                {ex.exchange_time || '--:--'}
+              </div>
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  onClick={() => updateExchange(activeSession, { exchange_time: nowTimeStr() })}
+                  style={{
+                    padding: '0 18px', height: 52, borderRadius: 12,
+                    background: C.primary, color: '#fff',
+                    border: 'none', fontSize: 14, fontWeight: 700,
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}
+                >지금 시간</button>
+              )}
+              {!isReadOnly && ex.exchange_time && (
+                <button
+                  type="button"
+                  onClick={() => updateExchange(activeSession, { exchange_time: '' })}
+                  style={{
+                    padding: '0 14px', height: 52, borderRadius: 12,
+                    background: '#fff', color: C.textMuted,
+                    border: `1.5px solid ${C.border}`, fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >초기화</button>
+              )}
+            </div>
+          </div>
+
+          {/* 농도 */}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+              농도 (%)
+            </label>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {CONC_OPTIONS.map(opt => {
+                const active = ex.infusion_concentration === opt
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      if (isReadOnly) return
+                      updateExchange(activeSession, {
+                        infusion_concentration: active ? undefined : opt,
+                      })
+                    }}
+                    style={{
+                      flex: 1, height: 52, borderRadius: 12,
+                      border: `1.5px solid ${active ? C.primary : C.border}`,
+                      background: active ? '#f0ebff' : '#fff',
+                      color: active ? C.primary : C.textMuted,
+                      fontSize: 17, fontWeight: active ? 700 : 500,
+                      cursor: isReadOnly ? 'default' : 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >{opt}</button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 주입량 */}
+          <Stepper
+            label="주입량 (g)"
+            value={ex.infusion_weight}
+            onChange={v => updateExchange(activeSession, { infusion_weight: v })}
+            step={50}
+            min={0}
+            unit="g"
+            readOnly={isReadOnly}
+          />
+
+          {/* 배액량 */}
+          <Stepper
+            label="배액량 (g)"
+            value={ex.drainage_volume}
+            onChange={v => updateExchange(activeSession, { drainage_volume: v })}
+            step={50}
+            min={0}
+            unit="g"
+            readOnly={isReadOnly}
+          />
+
+          {/* 제수량 자동 계산 결과 */}
+          <div>
+            <label style={{ fontSize: 14, fontWeight: 600, color: C.textMuted }}>
+              제수량 (자동 계산)
+            </label>
+            <div style={{
+              marginTop: 10, height: 52, borderRadius: 12,
+              background: uf === undefined ? C.bg : uf >= 0 ? '#f0fdf4' : '#fef2f2',
+              border: `1.5px solid ${uf === undefined ? C.border : uf >= 0 ? '#bbf7d0' : '#fecaca'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, fontWeight: 700,
+              color: uf === undefined ? C.textLight : uf >= 0 ? '#16a34a' : '#dc2626',
+            }}>
+              {uf !== undefined ? `${uf}g` : '—'}
+            </div>
+          </div>
+
+          {/* 이 회차 초기화 */}
+          {!isReadOnly && isFilled(ex) && (
+            <button
+              type="button"
+              onClick={() => updateExchange(activeSession, emptyExchange(activeSession + 1))}
+              style={{
+                padding: '10px', borderRadius: 10,
+                border: `1px solid ${C.border}`, background: '#fff',
+                color: C.textMuted, fontSize: 13, cursor: 'pointer',
+              }}
+            >이 회차 초기화</button>
           )}
         </div>
+
+        {/* 회차 간 이동 버튼 */}
+        {!isReadOnly && (
+          <div style={{
+            padding: '12px 18px 16px',
+            borderTop: `1px solid ${C.border}`,
+            display: 'flex', justifyContent: 'space-between', gap: 10,
+          }}>
+            <button
+              type="button"
+              onClick={() => setActiveSession(s => Math.max(0, s - 1))}
+              disabled={activeSession === 0}
+              style={{
+                flex: 1, padding: '12px', borderRadius: 11,
+                border: `1.5px solid ${C.border}`, background: '#fff',
+                color: activeSession === 0 ? C.textLight : C.text,
+                fontSize: 15, fontWeight: 600, cursor: activeSession === 0 ? 'default' : 'pointer',
+              }}
+            >← 이전 회차</button>
+            <button
+              type="button"
+              onClick={() => setActiveSession(s => Math.min(4, s + 1))}
+              disabled={activeSession === 4}
+              style={{
+                flex: 1, padding: '12px', borderRadius: 11,
+                border: `1.5px solid ${C.primary}`, background: C.primary,
+                color: activeSession === 4 ? 'rgba(255,255,255,0.4)' : '#fff',
+                fontSize: 15, fontWeight: 600, cursor: activeSession === 4 ? 'default' : 'pointer',
+              }}
+            >다음 회차 →</button>
+          </div>
+        )}
       </div>
 
       {/* ── 기타 기록 ───────────────────────────────────────────── */}
       <div style={{
-        background: '#fff',
-        borderRadius: 14,
+        background: '#fff', borderRadius: 16,
         border: `1px solid ${C.border}`,
         overflow: 'hidden',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
       }}>
-        <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.text }}>기타 기록</h2>
+        <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>기타 기록</h2>
         </div>
-        <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))', gap: 14 }}>
+        <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 22 }}>
 
           {/* 복막액 혼탁 */}
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.textMuted, marginBottom: 8 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               복막액 혼탁 여부
             </label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
               {[
                 { label: '정상', value: false, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
                 { label: '혼탁', value: true,  color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
@@ -412,292 +529,229 @@ export default function RecordForm({
                     type="button"
                     onClick={() => { if (!isReadOnly) setTurbid(opt.value) }}
                     style={{
-                      flex: 1,
-                      padding: '9px 0',
-                      borderRadius: 9,
-                      border: `1.5px solid ${active ? opt.border : C.border}`,
+                      flex: 1, height: 56, borderRadius: 12,
+                      border: `2px solid ${active ? opt.border : C.border}`,
                       background: active ? opt.bg : '#fff',
                       color: active ? opt.color : C.textMuted,
-                      fontSize: 13, fontWeight: active ? 700 : 500,
+                      fontSize: 16, fontWeight: active ? 700 : 500,
                       cursor: isReadOnly ? 'default' : 'pointer',
                       transition: 'all 0.15s',
                     }}
-                  >
-                    {opt.label}
-                  </button>
+                  >{opt.label}</button>
                 )
               })}
             </div>
           </div>
 
           {/* 체중 */}
-          <Field
+          <Stepper
             label="체중 (kg)"
-            type="number"
-            placeholder="예) 62.5"
-            step="0.1"
             value={weight}
-            onChange={e => { if (!isReadOnly) setWeight(e.target.value) }}
+            onChange={v => { if (!isReadOnly) setWeight(v) }}
+            step={0.5}
+            min={0}
+            unit="kg"
             readOnly={isReadOnly}
           />
 
-          {/* 혈압 — 수축기/이완기 두 칸이라 전체 너비 사용 */}
-          <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.textMuted, marginBottom: 8 }}>
+          {/* 혈압 */}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               혈압 (mmHg)
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="수축기"
-                min="0"
                 value={bpSystolic}
-                onChange={e => { if (!isReadOnly) setBpSystolic(e.target.value) }}
+                onChange={e => { if (!isReadOnly) setBpSystolic(e.target.value.replace(/[^0-9]/g, '')) }}
                 readOnly={isReadOnly}
                 style={{
-                  flex: '1 1 0', minWidth: 0, padding: '10px 6px', borderRadius: 9,
-                  border: `1.5px solid ${C.border}`, fontSize: 13,
-                  fontFamily: 'inherit', color: C.text, outline: 'none',
-                  background: isReadOnly ? C.bg : '#fff', textAlign: 'center',
-                  boxSizing: 'border-box',
+                  flex: '1 1 0', minWidth: 0, height: 52, padding: '0 10px',
+                  borderRadius: 12, border: `1.5px solid ${C.border}`,
+                  fontSize: 16, fontFamily: 'inherit', color: C.text,
+                  background: isReadOnly ? C.bg : '#fff',
+                  textAlign: 'center', outline: 'none', boxSizing: 'border-box',
                 }}
               />
-              <span style={{ color: C.textMuted, fontWeight: 700, flexShrink: 0 }}>/</span>
+              <span style={{ fontSize: 20, color: C.textMuted, fontWeight: 700, flexShrink: 0 }}>/</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="이완기"
-                min="0"
                 value={bpDiastolic}
-                onChange={e => { if (!isReadOnly) setBpDiastolic(e.target.value) }}
+                onChange={e => { if (!isReadOnly) setBpDiastolic(e.target.value.replace(/[^0-9]/g, '')) }}
                 readOnly={isReadOnly}
                 style={{
-                  flex: '1 1 0', minWidth: 0, padding: '10px 6px', borderRadius: 9,
-                  border: `1.5px solid ${C.border}`, fontSize: 13,
-                  fontFamily: 'inherit', color: C.text, outline: 'none',
-                  background: isReadOnly ? C.bg : '#fff', textAlign: 'center',
-                  boxSizing: 'border-box',
+                  flex: '1 1 0', minWidth: 0, height: 52, padding: '0 10px',
+                  borderRadius: 12, border: `1.5px solid ${C.border}`,
+                  fontSize: 16, fontFamily: 'inherit', color: C.text,
+                  background: isReadOnly ? C.bg : '#fff',
+                  textAlign: 'center', outline: 'none', boxSizing: 'border-box',
                 }}
               />
             </div>
           </div>
 
           {/* 소변 횟수 */}
-          <Field
+          <Stepper
             label="소변 횟수"
-            type="number"
-            placeholder="예) 3"
             value={urineCount}
-            onChange={e => { if (!isReadOnly) setUrineCount(e.target.value) }}
+            onChange={v => { if (!isReadOnly) setUrineCount(v) }}
+            step={1}
+            min={0}
+            unit="회"
             readOnly={isReadOnly}
           />
 
           {/* 공복혈당 */}
-          <Field
+          <BigField
             label="공복혈당 (mg/dL)"
-            type="number"
             placeholder="예) 105"
             value={fastingGlucose}
-            onChange={e => { if (!isReadOnly) setFasting(e.target.value) }}
+            onChange={e => { if (!isReadOnly) setFasting(e.target.value.replace(/[^0-9]/g, '')) }}
             readOnly={isReadOnly}
           />
 
-          {/* 총 제수량 (읽기 전용 자동 계산) */}
+          {/* 총 제수량 */}
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.textMuted, marginBottom: 8 }}>
-              총 제수량 (g)
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+              총 제수량 (자동 계산)
             </label>
-            <input
-              type="text"
-              value={totalUltrafiltration > 0 ? `${totalUltrafiltration}g` : ''}
-              placeholder="교환 기록에서 자동 계산"
-              readOnly
+            <div style={{
+              height: 52, borderRadius: 12,
+              border: `1.5px solid ${C.border}`,
+              background: C.bg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, fontWeight: 700,
+              color: totalUltrafiltration > 0 ? C.primary : C.textLight,
+            }}>
+              {totalUltrafiltration > 0 ? `${totalUltrafiltration}g` : '교환 기록에서 자동 계산'}
+            </div>
+          </div>
+
+          {/* 메모 */}
+          <div>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+              메모 (특이사항)
+            </label>
+            <textarea
+              placeholder="특이사항이 있으면 입력해 주세요."
+              rows={3}
+              value={memo}
+              onChange={e => { if (!isReadOnly) setMemo(e.target.value) }}
+              readOnly={isReadOnly}
               style={{
-                width: '100%', padding: '10px 12px', borderRadius: 9,
-                border: `1.5px solid ${C.border}`, fontSize: 13,
-                fontFamily: 'inherit', color: C.primary, fontWeight: 700,
-                background: C.bg, outline: 'none',
+                width: '100%', padding: '14px', borderRadius: 12,
+                border: `1.5px solid ${C.border}`, fontSize: 15,
+                fontFamily: 'inherit', color: C.text, outline: 'none',
+                background: isReadOnly ? C.bg : '#fff', resize: 'vertical',
+                boxSizing: 'border-box', lineHeight: 1.6,
               }}
             />
           </div>
-
-        </div>
-
-        {/* 메모 */}
-        <div style={{ padding: '0 16px 16px' }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.textMuted, marginBottom: 8 }}>
-            메모 (특이사항)
-          </label>
-          <textarea
-            placeholder="특이사항이 있으면 입력해 주세요."
-            rows={3}
-            value={memo}
-            onChange={e => { if (!isReadOnly) setMemo(e.target.value) }}
-            readOnly={isReadOnly}
-            style={{
-              width: '100%', padding: '10px 12px', borderRadius: 9,
-              border: `1.5px solid ${C.border}`, fontSize: 13,
-              fontFamily: 'inherit', color: C.text, outline: 'none',
-              background: isReadOnly ? C.bg : '#fff', resize: 'vertical',
-              boxSizing: 'border-box',
-            }}
-          />
         </div>
       </div>
 
-      {/* ── 수치 소프트 경고 배너 ────────────────────────────────── */}
+      {/* ── 수치 소프트 경고 ─────────────────────────────────────── */}
       {!isReadOnly && softWarnings.length > 0 && (
         <div style={{
-          padding: '12px 16px',
-          backgroundColor: '#fffbeb',
-          border: '1px solid #fcd34d',
-          borderRadius: 12,
-          display: 'flex', flexDirection: 'column', gap: 6,
+          padding: '14px 18px', backgroundColor: '#fffbeb',
+          border: '1px solid #fcd34d', borderRadius: 14,
+          display: 'flex', flexDirection: 'column', gap: 8,
         }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#92400e', margin: 0 }}>
-            ⚠ 입력값 확인
-          </p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#92400e', margin: 0 }}>⚠ 입력값 확인</p>
           {softWarnings.map((w, i) => (
-            <p key={i} style={{ fontSize: 13, color: '#b45309', margin: 0 }}>• {w}</p>
+            <p key={i} style={{ fontSize: 14, color: '#b45309', margin: 0 }}>• {w}</p>
           ))}
-          <p style={{ fontSize: 12, color: '#92400e', margin: 0, marginTop: 2 }}>
+          <p style={{ fontSize: 13, color: '#92400e', margin: 0 }}>
             실제 측정값이 맞다면 그대로 제출하셔도 됩니다.
           </p>
         </div>
       )}
 
-      {/* ── 버튼 영역 ─────────────────────────────────────────────── */}
+      {/* ── 버튼 영역 ────────────────────────────────────────────── */}
       {!isReadOnly && (
         <div>
-          {/* 경고 메시지 */}
           {submitWarning && (
             <div style={{
-              marginBottom: 14, padding: '14px 16px',
-              backgroundColor: '#fffbeb',
-              border: '1px solid #fcd34d',
-              borderRadius: 12, fontSize: 13, color: '#92400e',
+              marginBottom: 16, padding: '16px 18px',
+              backgroundColor: '#fffbeb', border: '1px solid #fcd34d',
+              borderRadius: 14, fontSize: 14, color: '#92400e',
             }}>
-              <p style={{ fontWeight: 700, marginBottom: 6 }}>⚠ 교환 기록이 {filledExchangeCount}회차만 입력되었어요</p>
-              <p style={{ marginBottom: 12 }}>
+              <p style={{ fontWeight: 700, marginBottom: 8, fontSize: 15 }}>
+                ⚠ 교환 기록이 {filledCount}회차만 입력되었어요
+              </p>
+              <p style={{ marginBottom: 14, lineHeight: 1.6 }}>
                 하루 3회 미만은 투석이 부족할 수 있습니다.<br />
                 그래도 지금 최종 제출하시겠어요?
               </p>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={isFinalLoading}
                   style={{
-                    flex: 1, padding: '9px 0',
-                    background: '#d97706', color: '#fff',
-                    border: 'none', borderRadius: 8,
-                    fontSize: 13, fontWeight: 700,
+                    flex: 1, padding: '12px 0', background: '#d97706', color: '#fff',
+                    border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700,
                     cursor: isFinalLoading ? 'not-allowed' : 'pointer',
                     opacity: isFinalLoading ? 0.6 : 1,
                   }}
-                >
-                  {isFinalLoading ? '제출 중...' : '그래도 제출하기'}
-                </button>
+                >{isFinalLoading ? '제출 중...' : '그래도 제출하기'}</button>
                 <button
                   type="button"
                   onClick={() => setSubmitWarning(false)}
                   style={{
-                    flex: 1, padding: '9px 0',
-                    background: '#fff', color: C.textMuted,
-                    border: `1px solid ${C.border}`, borderRadius: 8,
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    flex: 1, padding: '12px 0', background: '#fff', color: C.textMuted,
+                    border: `1px solid ${C.border}`, borderRadius: 10,
+                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
                   }}
-                >
-                  계속 입력하기
-                </button>
+                >계속 입력하기</button>
               </div>
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 10 }}>
-            {/* 임시저장 */}
             <button
               type="submit"
               disabled={isDraftLoading || isFinalLoading}
               style={{
-                flex: 1, padding: '13px 0',
+                flex: 1, padding: '15px 0',
                 background: '#fff', color: C.primary,
-                border: `1.5px solid ${C.primary}`, borderRadius: 11,
-                fontSize: 14, fontWeight: 700,
+                border: `2px solid ${C.primary}`, borderRadius: 12,
+                fontSize: 16, fontWeight: 700,
                 cursor: isDraftLoading ? 'not-allowed' : 'pointer',
                 opacity: isDraftLoading ? 0.6 : 1,
                 fontFamily: 'inherit', transition: 'all 0.15s',
               }}
               className="capd-btn-outline-hover"
-            >
-              {isDraftLoading ? '저장 중...' : '오늘 기록 저장'}
-            </button>
+            >{isDraftLoading ? '저장 중...' : '기록 저장'}</button>
 
-            {/* 최종 제출 */}
             <button
               type="button"
               onClick={handleFinalClick}
               disabled={isDraftLoading || isFinalLoading}
               style={{
-                flex: 2, padding: '13px 0',
+                flex: 2, padding: '15px 0',
                 background: C.primary, color: '#fff',
-                border: 'none', borderRadius: 11,
-                fontSize: 14, fontWeight: 700,
+                border: 'none', borderRadius: 12,
+                fontSize: 16, fontWeight: 700,
                 cursor: isFinalLoading ? 'not-allowed' : 'pointer',
                 opacity: isFinalLoading ? 0.6 : 1,
                 fontFamily: 'inherit', transition: 'opacity 0.15s',
               }}
               className="capd-btn-hover"
-            >
-              {isFinalLoading ? '제출 중...' : '최종 제출하기 →'}
-            </button>
+            >{isFinalLoading ? '제출 중...' : '최종 제출하기 →'}</button>
           </div>
 
-          <p style={{ margin: '10px 0 0', fontSize: 12, color: C.textLight, textAlign: 'center' }}>
+          <p style={{ margin: '12px 0 0', fontSize: 13, color: C.textLight, textAlign: 'center' }}>
             * 최종 제출 후 후속 설문이 이어집니다.
           </p>
         </div>
       )}
     </form>
-  )
-}
-
-// ── 재사용 필드 컴포넌트 ──────────────────────────────────────────
-function Field({
-  label, type, placeholder, step, value, onChange, readOnly,
-}: {
-  label: string
-  type?: string
-  placeholder?: string
-  step?: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  readOnly?: boolean
-}) {
-  const [focused, setFocused] = useState(false)
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
-        {label}
-      </label>
-      <input
-        type={type ?? 'text'}
-        placeholder={placeholder}
-        step={step}
-        min="0"
-        value={value}
-        onChange={onChange}
-        readOnly={readOnly}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        style={{
-          width: '100%', padding: '10px 12px', borderRadius: 9,
-          border: `1.5px solid ${focused ? 'var(--capd-primary)' : 'var(--capd-border)'}`,
-          fontSize: 13, fontFamily: 'inherit', color: '#1a1a2e',
-          background: readOnly ? 'var(--capd-bg)' : '#fff',
-          outline: 'none', transition: 'border-color 0.15s',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
   )
 }
