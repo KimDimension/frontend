@@ -432,7 +432,6 @@ export default function RecordForm({
       <div style={{
         background: '#fff', borderRadius: 16,
         border: `1px solid ${C.border}`,
-        overflow: 'hidden',
         boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
       }}>
         {/* 섹션 헤더 */}
@@ -652,7 +651,6 @@ export default function RecordForm({
       <div style={{
         background: '#fff', borderRadius: 16,
         border: `1px solid ${C.border}`,
-        overflow: 'hidden',
         boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
       }}>
         <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
