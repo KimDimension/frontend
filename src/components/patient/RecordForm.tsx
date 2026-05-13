@@ -98,7 +98,7 @@ function Stepper({
 
   return (
     <div>
-      <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+      <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
         {label}
       </label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -150,6 +150,113 @@ function Stepper({
   )
 }
 
+// ── 멀티스테퍼 (B안: 값 가운데, 좌우 ±1/10/50 세로 배치) ──────────
+function MultiStepper({
+  label, value, onChange, steps, min, unit, readOnly, startAt,
+}: {
+  label: string
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+  steps: number[]          // e.g. [1, 10, 50]
+  min: number
+  unit: string
+  readOnly?: boolean
+  startAt?: number
+}) {
+  const [raw, setRaw] = useState(value !== undefined ? String(value) : '')
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value
+    setRaw(v)
+    if (v === '') { onChange(undefined); return }
+    const num = parseInt(v, 10)
+    if (!isNaN(num)) onChange(num)
+  }
+
+  const handleBlur = () => {
+    if (value !== undefined) setRaw(String(value))
+    else setRaw('')
+  }
+
+  const adjust = (delta: number) => {
+    const cur = value ?? startAt ?? 0
+    const next = Math.max(min, cur + delta)
+    onChange(next === 0 && min === 0 ? undefined : next)
+    setRaw(next === 0 && min === 0 ? '' : String(next))
+  }
+
+  const btnStyle = (positive: boolean): React.CSSProperties => ({
+    width: 52, borderRadius: 10, flexShrink: 0,
+    border: `1.5px solid ${positive ? C.primary : C.border}`,
+    background: positive ? C.primary : '#fff',
+    fontSize: 12, fontWeight: 700,
+    color: positive ? '#fff' : C.textMuted,
+    cursor: 'pointer', padding: '6px 0', textAlign: 'center',
+  })
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+        {label}
+      </label>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 8 }}>
+        {/* 왼쪽 − 버튼들 */}
+        {!readOnly && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[...steps].reverse().map(s => (
+              <button key={s} type="button" onClick={() => adjust(-s)} style={btnStyle(false)}>
+                −{s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 가운데 값 입력 */}
+        <div style={{ flex: 1, position: 'relative' }}>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={readOnly ? (value !== undefined ? String(value) : '—') : raw}
+            onChange={handleInput}
+            onBlur={handleBlur}
+            readOnly={readOnly}
+            placeholder={startAt !== undefined ? String(startAt) : '—'}
+            style={{
+              width: '100%', height: '100%', minHeight: 52,
+              borderRadius: 12, boxSizing: 'border-box',
+              border: `1.5px solid ${C.border}`,
+              background: readOnly ? C.bg : '#fff',
+              fontSize: 20, fontWeight: 700,
+              color: value !== undefined ? C.text : C.textLight,
+              textAlign: 'center', outline: 'none', fontFamily: 'inherit',
+              paddingRight: unit ? `${unit.length * 14 + 8}px` : '12px',
+              paddingLeft: '12px',
+            }}
+          />
+          {unit && (
+            <span style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 13, color: C.textMuted, pointerEvents: 'none',
+            }}>{unit}</span>
+          )}
+        </div>
+
+        {/* 오른쪽 + 버튼들 */}
+        {!readOnly && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[...steps].reverse().map(s => (
+              <button key={s} type="button" onClick={() => adjust(+s)} style={btnStyle(true)}>
+                +{s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── 큰 입력 필드 ─────────────────────────────────────────────────
 function BigField({
   label, placeholder, value, onChange, readOnly, unit,
@@ -164,7 +271,7 @@ function BigField({
   const [focused, setFocused] = useState(false)
   return (
     <div>
-      <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+      <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
         {label}
       </label>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -330,7 +437,7 @@ export default function RecordForm({
       }}>
         {/* 섹션 헤더 */}
         <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>투석 교환 기록</h2>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: C.text }}>투석 교환 기록</h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: C.textMuted }}>
             총 {filledCount}회 입력됨
             {totalUltrafiltration > 0 && (
@@ -380,7 +487,7 @@ export default function RecordForm({
 
           {/* 시간 */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               교환 시간
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -410,10 +517,10 @@ export default function RecordForm({
                   type="button"
                   onClick={() => updateExchange(activeSession, { exchange_time: nowTimeStr() })}
                   style={{
-                    padding: '0 16px', height: 52, borderRadius: 12, flexShrink: 0,
+                    width: 60, height: 52, borderRadius: 12, flexShrink: 0,
                     background: C.primary, color: '#fff',
                     border: 'none', fontSize: 14, fontWeight: 700,
-                    cursor: 'pointer', whiteSpace: 'nowrap',
+                    cursor: 'pointer',
                   }}
                 >지금</button>
               )}
@@ -422,7 +529,7 @@ export default function RecordForm({
 
           {/* 농도 */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               농도 (%)
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -466,14 +573,15 @@ export default function RecordForm({
           />
 
           {/* 배액량 */}
-          <Stepper
+          <MultiStepper
             label="배액량 (g)"
             value={ex.drainage_volume}
             onChange={v => updateExchange(activeSession, { drainage_volume: v })}
-            step={50}
+            steps={[1, 10, 50]}
             min={0}
             unit="g"
             readOnly={isReadOnly}
+            startAt={2000}
           />
 
           {/* 제수량 자동 계산 결과 */}
@@ -548,13 +656,13 @@ export default function RecordForm({
         boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
       }}>
         <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>기타 기록</h2>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: C.text }}>기타 기록</h2>
         </div>
         <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 22 }}>
 
           {/* 복막액 혼탁 */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               복막액 혼탁 여부
             </label>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -597,7 +705,7 @@ export default function RecordForm({
 
           {/* 혈압 */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               혈압 (mmHg)
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -659,7 +767,7 @@ export default function RecordForm({
 
           {/* 총 제수량 */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               총 제수량 (자동 계산)
             </label>
             <div style={{
@@ -676,7 +784,7 @@ export default function RecordForm({
 
           {/* 메모 */}
           <div>
-            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
               메모 (특이사항)
             </label>
             <textarea
