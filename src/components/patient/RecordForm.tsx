@@ -106,9 +106,9 @@ function Stepper({
           <button type="button" onClick={stepDown} style={{
             width: 52, height: 52, borderRadius: 12, flexShrink: 0,
             border: `1.5px solid ${C.border}`, background: '#fff',
-            fontSize: 24, fontWeight: 300, color: C.textMuted,
+            fontSize: step >= 10 ? 13 : 24, fontWeight: step >= 10 ? 700 : 300, color: C.textMuted,
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>−</button>
+          }}>−{step >= 10 ? step : ''}</button>
         )}
         <div style={{ flex: 1, position: 'relative' }}>
           <input
@@ -141,118 +141,9 @@ function Stepper({
           <button type="button" onClick={stepUp} style={{
             width: 52, height: 52, borderRadius: 12, flexShrink: 0,
             border: `1.5px solid ${C.primary}`, background: C.primary,
-            fontSize: 24, fontWeight: 300, color: '#fff',
+            fontSize: step >= 10 ? 13 : 24, fontWeight: step >= 10 ? 700 : 300, color: '#fff',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>+</button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── 멀티스테퍼 (B안: 값 가운데, 좌우 ±1/10/50 세로 배치) ──────────
-function MultiStepper({
-  label, value, onChange, steps, min, unit, readOnly, startAt,
-}: {
-  label: string
-  value: number | undefined
-  onChange: (v: number | undefined) => void
-  steps: number[]          // e.g. [1, 10, 50]
-  min: number
-  unit: string
-  readOnly?: boolean
-  startAt?: number
-}) {
-  const [raw, setRaw] = useState(value !== undefined ? String(value) : '')
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value
-    setRaw(v)
-    if (v === '') { onChange(undefined); return }
-    const num = parseInt(v, 10)
-    if (!isNaN(num)) onChange(num)
-  }
-
-  const handleBlur = () => {
-    if (value !== undefined) setRaw(String(value))
-    else setRaw('')
-  }
-
-  const adjust = (delta: number) => {
-    const cur = value ?? startAt ?? 0
-    const next = Math.max(min, cur + delta)
-    onChange(next === 0 && min === 0 ? undefined : next)
-    setRaw(next === 0 && min === 0 ? '' : String(next))
-  }
-
-  // 버튼 3개 + gap 2개가 입력창 높이(108px)에 딱 맞게: (108 - 8) / 3 = 33px
-  const btnStyle = (positive: boolean): React.CSSProperties => ({
-    width: 52, height: 33, borderRadius: 8, flexShrink: 0,
-    border: `1.5px solid ${positive ? C.primary : C.border}`,
-    background: positive ? C.primary : '#fff',
-    fontSize: 12, fontWeight: 700,
-    color: positive ? '#fff' : C.textMuted,
-    cursor: 'pointer', padding: 0, textAlign: 'center',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-  })
-
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
-        {label}
-      </label>
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: 8 }}>
-        {/* 왼쪽 − 버튼들 */}
-        {!readOnly && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {[...steps].reverse().map(s => (
-              <button key={s} type="button" onClick={() => adjust(-s)} style={btnStyle(false)}>
-                −{s}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* 가운데 값 입력 — 버튼 3개(33px) + gap 2개(4px) = 107px */}
-        <div style={{ flex: 1, position: 'relative' }}>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={readOnly ? (value !== undefined ? String(value) : '—') : raw}
-            onChange={handleInput}
-            onBlur={handleBlur}
-            readOnly={readOnly}
-            placeholder={startAt !== undefined ? String(startAt) : '—'}
-            style={{
-              width: '100%', height: 107,
-              borderRadius: 12, boxSizing: 'border-box',
-              border: `1.5px solid ${C.border}`,
-              background: readOnly ? C.bg : '#fff',
-              fontSize: 20, fontWeight: 700,
-              color: value !== undefined ? C.text : C.textLight,
-              textAlign: 'center', outline: 'none', fontFamily: 'inherit',
-              paddingRight: unit ? `${unit.length * 14 + 8}px` : '12px',
-              paddingLeft: '12px',
-            }}
-          />
-          {unit && (
-            <span style={{
-              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 13, color: C.textMuted, pointerEvents: 'none',
-            }}>{unit}</span>
-          )}
-        </div>
-
-        {/* 오른쪽 + 버튼들 */}
-        {!readOnly && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {[...steps].reverse().map(s => (
-              <button key={s} type="button" onClick={() => adjust(+s)} style={btnStyle(true)}>
-                +{s}
-              </button>
-            ))}
-          </div>
+          }}>+{step >= 10 ? step : ''}</button>
         )}
       </div>
     </div>
@@ -507,7 +398,7 @@ export default function RecordForm({
                 }}
                 readOnly={isReadOnly}
                 style={{
-                  width: 110, height: 52, borderRadius: 12, boxSizing: 'border-box',
+                  flex: 1, minWidth: 0, height: 52, borderRadius: 12, boxSizing: 'border-box',
                   border: `1.5px solid ${C.border}`,
                   background: isReadOnly ? C.bg : '#fff',
                   fontSize: 20, fontWeight: 700, color: C.text,
@@ -575,11 +466,11 @@ export default function RecordForm({
           />
 
           {/* 배액량 */}
-          <MultiStepper
+          <Stepper
             label="배액량 (g)"
             value={ex.drainage_volume}
             onChange={v => updateExchange(activeSession, { drainage_volume: v })}
-            steps={[1, 10, 50]}
+            step={50}
             min={0}
             unit="g"
             readOnly={isReadOnly}
@@ -703,6 +594,7 @@ export default function RecordForm({
             unit="kg"
             readOnly={isReadOnly}
             isDecimal
+            startAt={60}
           />
 
           {/* 혈압 */}
