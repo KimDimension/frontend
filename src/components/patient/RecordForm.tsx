@@ -11,7 +11,7 @@ const C = {
   textLight:    '#9ca3af',
 }
 
-const CONC_OPTIONS = [1.5, 2.5, 4.25]
+const CONC_OPTIONS = [1.5, 2.5, 4.25, 7.5]
 const SESSIONS = [1, 2, 3, 4, 5]
 
 const emptyExchange = (session_number: number): ExchangeRecord => ({
