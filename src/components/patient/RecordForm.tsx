@@ -4,11 +4,19 @@ import type { DailyRecordCreate, DailyRecordResponse, ExchangeRecord } from '../
 const C = {
   primary:      'var(--capd-primary)',
   primaryLight: 'var(--capd-primary-light)',
+  primaryDark:  'var(--capd-primary-dark)',
   bg:           'var(--capd-bg)',
+  bgCard:       'var(--bg-card)',
   border:       'var(--capd-border)',
-  text:         '#1a1a2e',
-  textMuted:    '#6b7280',
-  textLight:    '#9ca3af',
+  text:         'var(--text-main)',
+  textMuted:    'var(--text-sub)',
+  textLight:    'var(--text-muted)',
+  success:      'var(--success)',
+  successLight: 'var(--success-light)',
+  warning:      'var(--warning)',
+  warningLight: 'var(--warning-light)',
+  danger:       'var(--danger)',
+  dangerLight:  'var(--danger-light)',
 }
 
 const CONC_OPTIONS = [1.5, 2.5, 4.25, 7.5]
@@ -447,7 +455,7 @@ export default function RecordForm({
                     style={{
                       flex: 1, height: 52, borderRadius: 12,
                       border: `1.5px solid ${active ? C.primary : C.border}`,
-                      background: active ? '#f0ebff' : '#fff',
+                      background: active ? C.primaryLight : '#fff',
                       color: active ? C.primary : C.textMuted,
                       fontSize: 17, fontWeight: active ? 700 : 500,
                       cursor: isReadOnly ? 'default' : 'pointer',
@@ -493,11 +501,11 @@ export default function RecordForm({
             </label>
             <div style={{
               marginTop: 10, height: 52, borderRadius: 12,
-              background: uf === undefined ? C.bg : uf >= 0 ? '#f0fdf4' : '#fef2f2',
+              background: uf === undefined ? C.bg : uf >= 0 ? C.successLight : C.dangerLight,
               border: `1.5px solid ${uf === undefined ? C.border : uf >= 0 ? '#bbf7d0' : '#fecaca'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, fontWeight: 700,
-              color: uf === undefined ? C.textLight : uf >= 0 ? '#16a34a' : '#dc2626',
+              color: uf === undefined ? C.textLight : uf >= 0 ? C.success : C.danger,
             }}>
               {uf !== undefined ? `${uf}g` : '—'}
             </div>
@@ -584,8 +592,8 @@ export default function RecordForm({
             </label>
             <div style={{ display: 'flex', gap: 12 }}>
               {[
-                { label: '정상', value: false, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-                { label: '혼탁', value: true,  color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+                { label: '정상', value: false, color: C.success,    bg: C.successLight, border: '#bbf7d0' },
+                { label: '혼탁', value: true,  color: C.danger,     bg: C.dangerLight,  border: '#fecaca' },
               ].map(opt => {
                 const active = turbidPeritoneal === opt.value
                 return (
@@ -728,7 +736,7 @@ export default function RecordForm({
       {/* ── 수치 소프트 경고 ─────────────────────────────────────── */}
       {!isReadOnly && softWarnings.length > 0 && (
         <div style={{
-          padding: '14px 18px', backgroundColor: '#fffbeb',
+          padding: '14px 18px', backgroundColor: C.warningLight,
           border: '1px solid #fcd34d', borderRadius: 14,
           display: 'flex', flexDirection: 'column', gap: 8,
         }}>
@@ -748,7 +756,7 @@ export default function RecordForm({
           {submitWarning && (
             <div style={{
               marginBottom: 16, padding: '16px 18px',
-              backgroundColor: '#fffbeb', border: '1px solid #fcd34d',
+              backgroundColor: C.warningLight, border: '1px solid #fcd34d',
               borderRadius: 14, fontSize: 14, color: '#92400e',
             }}>
               <p style={{ fontWeight: 700, marginBottom: 8, fontSize: 15 }}>
@@ -764,7 +772,7 @@ export default function RecordForm({
                   onClick={handleFinalSubmit}
                   disabled={isFinalLoading}
                   style={{
-                    flex: 1, padding: '12px 0', background: '#d97706', color: '#fff',
+                    flex: 1, padding: '12px 0', background: C.warning, color: '#fff',
                     border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700,
                     cursor: isFinalLoading ? 'not-allowed' : 'pointer',
                     opacity: isFinalLoading ? 0.6 : 1,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AIQuestionRow, listAIQuestions, rejectAIQuestion, restoreAIQuestion } from "../../api/questions";
 import { COLOR, btn, card, typography } from "../../styles/doctor";
+import { useToast } from "../../hooks/useToast";
 
 /* ── 아이콘 ────────────────────────────────────────────────────── */
 const IconX = () => (
@@ -38,6 +39,7 @@ export default function AIReviewPage() {
   const [statusFilter, setStatusFilter]   = useState<string>("pending");
   const [rejecting, setRejecting]         = useState<number | null>(null);
   const [restoring, setRestoring]         = useState<number | null>(null);
+  const errToast = useToast(3000);
 
   // 나이/성별 헬퍼
   const calcAge = (b: string | null, ref?: string) => {
@@ -88,7 +90,7 @@ export default function AIReviewPage() {
         )
       );
     } catch {
-      alert("거절 처리 중 오류가 발생했습니다.");
+      errToast.show("거절 처리 중 오류가 발생했습니다.");
     } finally {
       setRejecting(null);
     }
@@ -219,7 +221,7 @@ export default function AIReviewPage() {
                         await restoreAIQuestion(q.id);
                         setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, status: "pending" } : item));
                       } catch {
-                        alert("복구 중 오류가 발생했습니다.");
+                        errToast.show("복구 중 오류가 발생했습니다.");
                       } finally {
                         setRestoring(null);
                       }

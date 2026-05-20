@@ -98,6 +98,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [loading,     setLoading]     = useState(true)
   const [saving,      setSaving]      = useState(false)
   const saveToast = useToast(2000)
+  const errToast  = useToast(3000)
   const [discharging, setDischarging] = useState(false)
   const [err,         setErr]         = useState('')
   const [trend,       setTrend]       = useState<TrendPoint[]>([])
@@ -136,7 +137,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
       })
       if (!res.ok) throw new Error('저장 실패')
       setOrigNote(note); saveToast.show('saved')
-    } catch (e: any) { alert(e.message) } finally { setSaving(false) }
+    } catch (e: any) { errToast.show(e.message) } finally { setSaving(false) }
   }
 
   const handleDischarge = async () => {
@@ -149,8 +150,8 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail ?? '담당 해제 실패')
-      alert(data.message); onDischarge(patientId); onClose()
-    } catch (e: any) { alert(e.message) } finally { setDischarging(false) }
+      onDischarge(patientId); onClose()
+    } catch (e: any) { errToast.show(e.message) } finally { setDischarging(false) }
   }
 
   const noteChanged = note !== origNote
@@ -163,7 +164,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
     const res = await fetch(`${API}/api/v1/patients/${patientId}/records-export?${params}`, {
       headers: { Authorization: `Bearer ${t}` },
     })
-    if (!res.ok) { alert('내보내기 실패'); return }
+    if (!res.ok) { errToast.show('내보내기 실패'); return }
     const d = await res.json()
     const rows = d.records.map((r: any) => `<tr>
       <td>${r.record_date}</td>

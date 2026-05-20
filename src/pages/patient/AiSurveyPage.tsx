@@ -9,6 +9,28 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import client from '../../api/client'
 
+const C = {
+  primary:      'var(--capd-primary)',
+  bg:           'var(--bg-page)',
+  bgCard:       'var(--bg-card)',
+  border:       'var(--border)',
+  text:         'var(--text-main)',
+  textMuted:    'var(--text-muted)',
+  success:      'var(--success)',
+  successLight: 'var(--success-light)',
+  successBorder:'#bbf7d0',
+  danger:       'var(--danger)',
+  dangerLight:  'var(--danger-light)',
+  dangerBorder: '#fecaca',
+  ai:           'var(--ai-accent)',
+  aiLight:      'var(--ai-accent-light)',
+  aiMedium:     'var(--ai-accent-medium)',
+  aiBorder:     'var(--ai-accent-border)',
+  gray:         '#374151',
+  grayMid:      '#9ca3af',
+  grayBorder:   '#e5e7eb',
+}
+
 // ── 타입 ──────────────────────────────────────────────────
 
 type QuestionType = 'yes_no' | 'single_select' | 'multi_select' | 'short_text'
@@ -65,7 +87,7 @@ function AILoadingSkeleton() {
         }
         .ai-skeleton-bar {
           border-radius: 6px;
-          background: linear-gradient(90deg, #ede9fe 25%, #ddd6fe 50%, #ede9fe 75%);
+          background: linear-gradient(90deg, var(--ai-accent-medium) 25%, var(--ai-accent-border) 50%, var(--ai-accent-medium) 75%);
           background-size: 400px 100%;
           animation: shimmer 1.4s infinite linear;
         }
@@ -74,14 +96,14 @@ function AILoadingSkeleton() {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
         marginBottom: 16, padding: '10px 14px',
-        backgroundColor: '#f5f3ff', borderRadius: 10, border: '1px solid #ddd6fe',
+        backgroundColor: C.aiLight, borderRadius: 10, border: `1px solid ${C.aiBorder}`,
       }}>
         <div style={{
           width: 16, height: 16, borderRadius: '50%',
-          border: '2px solid #7c3aed', borderTopColor: 'transparent',
+          border: `2px solid ${C.ai}`, borderTopColor: 'transparent',
           animation: 'spin 0.8s linear infinite', flexShrink: 0,
         }} />
-        <span style={{ fontSize: 13, color: '#7c3aed', fontWeight: 600 }}>
+        <span style={{ fontSize: 13, color: C.ai, fontWeight: 600 }}>
           {AI_STEPS[stepIdx]}{dots}
         </span>
       </div>
@@ -89,7 +111,7 @@ function AILoadingSkeleton() {
       {[70, 55, 80].map((w, i) => (
         <div key={i} style={{
           padding: '16px', borderRadius: 10,
-          backgroundColor: '#f5f3ff', border: '1px solid #ede9fe', marginBottom: 10,
+          backgroundColor: C.aiLight, border: `1px solid ${C.aiMedium}`, marginBottom: 10,
         }}>
           <div className="ai-skeleton-bar" style={{ width: 64, height: 16, marginBottom: 10 }} />
           <div className="ai-skeleton-bar" style={{ width: `${w}%`, height: 14, marginBottom: 6 }} />
@@ -110,8 +132,8 @@ function AnsweredBadge() {
   return (
     <span style={{
       position: 'absolute', top: 12, right: 12,
-      fontSize: 10, fontWeight: 700, color: '#16a34a',
-      backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+      fontSize: 10, fontWeight: 700, color: C.success,
+      backgroundColor: C.successLight, border: `1px solid ${C.successBorder}`,
       padding: '2px 8px', borderRadius: 20,
     }}>✓ 답변 완료</span>
   )
@@ -120,7 +142,7 @@ function AnsweredBadge() {
 function QuestionLabel({ text, hasCheck }: { text: string; hasCheck: boolean }) {
   return (
     <p style={{
-      fontSize: 14, color: '#1a1a2e', fontWeight: 500,
+      fontSize: 14, color: C.text, fontWeight: 500,
       marginBottom: 12, lineHeight: 1.5,
       paddingRight: hasCheck ? 90 : 0,
     }}>
@@ -150,8 +172,8 @@ function YesNoButtons({ value, onChange, positiveLabel, negativeLabel }: {
             height: 34, minWidth: 64, padding: '0 14px',
             borderRadius: 8, border: 'none', cursor: 'pointer',
             fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-            backgroundColor: value === v ? 'var(--capd-primary)' : '#e5e7eb',
-            color: value === v ? '#fff' : '#374151',
+            backgroundColor: value === v ? C.primary : C.grayBorder,
+            color: value === v ? '#fff' : C.gray,
             boxShadow: value === v ? '0 2px 6px rgba(123,107,181,0.3)' : 'none',
           }}
           onClick={() => onChange(v)}
@@ -163,9 +185,9 @@ function YesNoButtons({ value, onChange, positiveLabel, negativeLabel }: {
 
 const textInputStyle: React.CSSProperties = {
   flex: 1, minWidth: 120, height: 34,
-  borderRadius: 8, border: '1px solid #e5e7eb',
-  backgroundColor: '#fff', padding: '0 12px',
-  fontSize: 13, color: '#1a1a2e', outline: 'none',
+  borderRadius: 8, border: `1px solid var(--border)`,
+  backgroundColor: 'var(--bg-card)', padding: '0 12px',
+  fontSize: 13, color: 'var(--text-main)', outline: 'none',
   transition: 'border-color 0.15s, box-shadow 0.15s',
 }
 
@@ -186,16 +208,16 @@ function AIQuestionItem({ question, answer, disabled, onChange }: {
   return (
     <div style={{
       padding: '16px', borderRadius: 10,
-      backgroundColor: disabled ? '#fafafa' : '#f5f3ff',
-      border: `1px solid ${disabled ? '#e5e7eb' : '#ddd6fe'}`,
+      backgroundColor: disabled ? '#fafafa' : C.aiLight,
+      border: `1px solid ${disabled ? C.grayBorder : C.aiBorder}`,
       marginBottom: 10, position: 'relative',
       opacity: disabled ? 0.6 : 1,
       transition: 'opacity 0.3s',
     }}>
       {answered && <AnsweredBadge />}
       <span style={{
-        fontSize: 10, fontWeight: 700, color: '#7c3aed',
-        backgroundColor: '#ede9fe', border: '1px solid #ddd6fe',
+        fontSize: 10, fontWeight: 700, color: C.ai,
+        backgroundColor: C.aiMedium, border: `1px solid ${C.aiBorder}`,
         padding: '2px 7px', borderRadius: 20, marginBottom: 6,
         display: 'inline-block',
       }}>🤖 AI 추천</span>
@@ -231,7 +253,7 @@ function AIQuestionItem({ question, answer, disabled, onChange }: {
                 onChange={() => onChange(question.question_id, { selected: [opt] })}
                 style={{ accentColor: 'var(--capd-primary)', width: 16, height: 16 }}
               />
-              <span style={{ fontSize: 14, color: '#1a1a2e' }}>{opt}</span>
+              <span style={{ fontSize: 14, color: C.text }}>{opt}</span>
             </label>
           ))}
         </div>
@@ -254,7 +276,7 @@ function AIQuestionItem({ question, answer, disabled, onChange }: {
                   }}
                   style={{ accentColor: 'var(--capd-primary)', width: 16, height: 16 }}
                 />
-                <span style={{ fontSize: 14, color: '#1a1a2e' }}>{opt}</span>
+                <span style={{ fontSize: 14, color: C.text }}>{opt}</span>
               </label>
             )
           })}
@@ -275,7 +297,7 @@ function AIQuestionItem({ question, answer, disabled, onChange }: {
       )}
 
       {disabled && (
-        <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 4 }}>질문 생성 완료 후 답변 가능합니다.</p>
+        <p style={{ fontSize: 13, color: C.grayMid, marginTop: 4 }}>질문 생성 완료 후 답변 가능합니다.</p>
       )}
     </div>
   )
@@ -345,9 +367,13 @@ export default function AiSurveyPage() {
     })
 
     es.onerror = () => {
-      // EventSource 연결 오류 (네트워크 오류 등)
-      // EventSource는 자동 재연결을 시도하므로 여기서는 로그만
-      console.warn('SSE 연결 오류 — 자동 재연결 대기 중')
+      // 네트워크 레벨 연결 오류 — 서버 event: error와 구분
+      // 이미 done/error 이벤트로 닫힌 경우 무시
+      if (esRef.current !== es) return
+      setSseError('서버와 연결이 끊겼습니다. 잠시 후 다시 시도해주세요.')
+      setSseLoading(false)
+      es.close()
+      esRef.current = null
     }
   }, [recordId])
 
@@ -422,7 +448,7 @@ export default function AiSurveyPage() {
   const noQuestions = !sseLoading && questions.length === 0 && !sseError
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f4f6fa' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
       {/* 헤더 */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, height: 56,
@@ -454,10 +480,10 @@ export default function AiSurveyPage() {
       <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 160px' }}>
         {!recordId ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
-            <p style={{ color: '#dc2626', fontSize: 14 }}>기록 정보가 없습니다.</p>
+            <p style={{ color: C.danger, fontSize: 14 }}>기록 정보가 없습니다.</p>
             <button onClick={() => navigate('/patient')} style={{
               marginTop: 16, padding: '10px 20px',
-              backgroundColor: 'var(--capd-primary)', color: '#fff',
+              backgroundColor: C.primary, color: '#fff',
               border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
             }}>목록으로</button>
           </div>
@@ -466,22 +492,22 @@ export default function AiSurveyPage() {
             {submitError && (
               <div style={{
                 padding: '10px 16px', borderRadius: 8, marginBottom: 14,
-                backgroundColor: '#fef2f2', border: '1px solid #fecaca',
-                fontSize: 13, color: '#dc2626',
+                backgroundColor: C.dangerLight, border: `1px solid ${C.dangerBorder}`,
+                fontSize: 13, color: C.danger,
               }}>⚠ {submitError}</div>
             )}
 
             <div style={{
-              backgroundColor: '#fff', borderRadius: 14,
+              backgroundColor: C.bgCard, borderRadius: 14,
               padding: '20px 18px', marginBottom: 16,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #ddd6fe',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: `1px solid ${C.aiBorder}`,
             }}>
               <div style={{ marginBottom: 14 }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 3, height: 14, backgroundColor: '#7c3aed', borderRadius: 2, display: 'inline-block' }} />
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 3, height: 14, backgroundColor: C.ai, borderRadius: 2, display: 'inline-block' }} />
                   AI 추천 질문
                 </p>
-                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 3 }}>
+                <p style={{ fontSize: 12, color: C.grayMid, marginTop: 3 }}>
                   오늘 기록과 공통 질문 답변을 바탕으로 AI가 생성한 질문입니다.
                 </p>
               </div>
@@ -504,17 +530,17 @@ export default function AiSurveyPage() {
               {sseError && (
                 <div style={{
                   padding: '16px', borderRadius: 10,
-                  backgroundColor: '#fef2f2', border: '1px solid #fecaca',
+                  backgroundColor: C.dangerLight, border: `1px solid ${C.dangerBorder}`,
                   textAlign: 'center',
                 }}>
-                  <p style={{ fontSize: 13, color: '#dc2626', marginBottom: 12 }}>
+                  <p style={{ fontSize: 13, color: C.danger, marginBottom: 12 }}>
                     ⚠ {sseError}
                   </p>
                   <button
                     onClick={connectSSE}
                     style={{
                       padding: '8px 20px', borderRadius: 8,
-                      backgroundColor: 'var(--capd-primary)', color: '#fff',
+                      backgroundColor: C.primary, color: '#fff',
                       border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                     }}
                   >
@@ -525,7 +551,7 @@ export default function AiSurveyPage() {
 
               {/* 질문 0개 */}
               {noQuestions && (
-                <div style={{ textAlign: 'center', padding: '20px 0', color: '#9ca3af', fontSize: 13 }}>
+                <div style={{ textAlign: 'center', padding: '20px 0', color: C.grayMid, fontSize: 13 }}>
                   오늘 기록에 특이사항이 없어 AI 추천 질문이 없습니다.
                 </div>
               )}
@@ -538,14 +564,14 @@ export default function AiSurveyPage() {
       {recordId && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          backgroundColor: '#fff', borderTop: '1px solid #e5e7eb',
+          backgroundColor: C.bgCard, borderTop: `1px solid ${C.grayBorder}`,
           padding: '12px 20px', boxShadow: '0 -4px 12px rgba(0,0,0,0.08)', zIndex: 100,
         }}>
           <div style={{ maxWidth: 680, margin: '0 auto' }}>
             <button
               style={{
                 width: '100%', height: 52,
-                backgroundColor: (allAnswered || noQuestions) && !submitting ? 'var(--capd-primary)' : '#9ca3af',
+                backgroundColor: (allAnswered || noQuestions) && !submitting ? C.primary : C.grayMid,
                 color: '#fff', border: 'none', borderRadius: 10,
                 fontSize: 15, fontWeight: 700,
                 cursor: (allAnswered || noQuestions) && !submitting ? 'pointer' : 'not-allowed',

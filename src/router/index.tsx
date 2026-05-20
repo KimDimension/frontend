@@ -15,7 +15,6 @@ import AIReviewPage from "../pages/doctor/AIReviewPage";
 import PatientApprovalPage from "../pages/doctor/PatientApprovalPage";
 import RecordListPage from "../pages/patient/RecordListPage";
 import RecordSubmitPage from "../pages/patient/RecordSubmitPage";
-import SurveyPage from "../pages/patient/SurveyPage";
 import CommonSurveyPage from "../pages/patient/CommonSurveyPage";
 import AiSurveyPage from "../pages/patient/AiSurveyPage";
 import SurveyDonePage from "../pages/patient/SurveyDonePage";
@@ -104,10 +103,6 @@ const router = createBrowserRouter([
   {
     path: "/patient/record",
     element: <PrivateRoute><RecordSubmitPage /></PrivateRoute>,
-  },
-  {
-    path: "/patient/survey",
-    element: <PrivateRoute><SurveyPage /></PrivateRoute>,       // 기존 — 하위 호환 유지
   },
   {
     path: "/patient/survey/common",

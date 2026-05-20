@@ -8,6 +8,27 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import client from '../../api/client'
 
+const C = {
+  primary:      'var(--capd-primary)',
+  bg:           'var(--bg-page)',
+  bgCard:       'var(--bg-card)',
+  bgSubtle:     '#f9fafb',
+  border:       'var(--border)',
+  text:         'var(--text-main)',
+  textMuted:    'var(--text-muted)',
+  success:      'var(--success)',
+  successLight: 'var(--success-light)',
+  successBorder:'#bbf7d0',
+  danger:       'var(--danger)',
+  dangerLight:  'var(--danger-light)',
+  dangerBorder: '#fecaca',
+  gray:         '#374151',
+  grayMid:      'var(--text-muted)',
+  infoLight:    'var(--capd-primary-light)',
+  infoBorder:   'var(--capd-border)',
+  infoText:     'var(--capd-primary-dark)',
+}
+
 // ── 타입 ──────────────────────────────────────────────────
 
 type QuestionType = 'yes_no' | 'single_select' | 'multi_select' | 'short_text'
@@ -36,8 +57,8 @@ function AnsweredBadge() {
   return (
     <span style={{
       position: 'absolute', top: 12, right: 12,
-      fontSize: 10, fontWeight: 700, color: '#16a34a',
-      backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+      fontSize: 10, fontWeight: 700, color: C.success,
+      backgroundColor: C.successLight, border: `1px solid ${C.successBorder}`,
       padding: '2px 8px', borderRadius: 20,
     }}>✓ 답변 완료</span>
   )
@@ -46,7 +67,7 @@ function AnsweredBadge() {
 function QuestionLabel({ text, hasCheck }: { text: string; hasCheck: boolean }) {
   return (
     <p style={{
-      fontSize: 14, color: '#1a1a2e', fontWeight: 500,
+      fontSize: 14, color: C.text, fontWeight: 500,
       marginBottom: 12, lineHeight: 1.5,
       paddingRight: hasCheck ? 90 : 0,
     }}>
@@ -70,8 +91,8 @@ function YesNoButtons({ value, onChange }: {
             height: 34, minWidth: 64, padding: '0 14px',
             borderRadius: 8, border: 'none', cursor: 'pointer',
             fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-            backgroundColor: value === v ? 'var(--capd-primary)' : '#e5e7eb',
-            color: value === v ? '#fff' : '#374151',
+            backgroundColor: value === v ? C.primary : C.border,
+            color: value === v ? '#fff' : C.gray,
             boxShadow: value === v ? '0 2px 6px rgba(123,107,181,0.3)' : 'none',
           }}
           onClick={() => onChange(v)}
@@ -83,9 +104,9 @@ function YesNoButtons({ value, onChange }: {
 
 const textInputStyle: React.CSSProperties = {
   flex: 1, minWidth: 120, height: 34,
-  borderRadius: 8, border: '1px solid #e5e7eb',
-  backgroundColor: '#fff', padding: '0 12px',
-  fontSize: 13, color: '#1a1a2e', outline: 'none',
+  borderRadius: 8, border: `1px solid var(--border)`,
+  backgroundColor: 'var(--bg-card)', padding: '0 12px',
+  fontSize: 13, color: 'var(--text-main)', outline: 'none',
   transition: 'border-color 0.15s, box-shadow 0.15s',
 }
 
@@ -105,7 +126,7 @@ function CommonQuestionItem({ question, answer, onChange }: {
   return (
     <div style={{
       padding: '16px', borderRadius: 10,
-      backgroundColor: '#f9fafb', border: '1px solid #e5e7eb',
+      backgroundColor: C.bgSubtle, border: `1px solid ${C.border}`,
       marginBottom: 10, position: 'relative',
     }}>
       {answered && <AnsweredBadge />}
@@ -136,7 +157,7 @@ function CommonQuestionItem({ question, answer, onChange }: {
                 onChange={() => onChange(question.question_id, { selected: [opt] })}
                 style={{ accentColor: 'var(--capd-primary)', width: 16, height: 16 }}
               />
-              <span style={{ fontSize: 14, color: '#1a1a2e' }}>{opt}</span>
+              <span style={{ fontSize: 14, color: C.text }}>{opt}</span>
             </label>
           ))}
           <input
@@ -166,7 +187,7 @@ function CommonQuestionItem({ question, answer, onChange }: {
                   }}
                   style={{ accentColor: 'var(--capd-primary)', width: 16, height: 16 }}
                 />
-                <span style={{ fontSize: 14, color: '#1a1a2e' }}>{opt}</span>
+                <span style={{ fontSize: 14, color: C.text }}>{opt}</span>
               </label>
             )
           })}
@@ -295,7 +316,7 @@ export default function CommonSurveyPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f4f6fa' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: C.bg }}>
       {/* 헤더 */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, height: 56,
@@ -327,14 +348,14 @@ export default function CommonSurveyPage() {
       <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 160px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
-            <p style={{ color: '#9ca3af', fontSize: 14 }}>⏳ 질문을 불러오는 중...</p>
+            <p style={{ color: C.textMuted, fontSize: 14 }}>⏳ 질문을 불러오는 중...</p>
           </div>
         ) : !recordId ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
-            <p style={{ color: '#dc2626', fontSize: 14 }}>기록 정보가 없습니다.</p>
+            <p style={{ color: C.danger, fontSize: 14 }}>기록 정보가 없습니다.</p>
             <button onClick={() => navigate('/patient')} style={{
               marginTop: 16, padding: '10px 20px',
-              backgroundColor: 'var(--capd-primary)', color: '#fff',
+              backgroundColor: C.primary, color: '#fff',
               border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer',
             }}>목록으로</button>
           </div>
@@ -343,22 +364,22 @@ export default function CommonSurveyPage() {
             {error && (
               <div style={{
                 padding: '10px 16px', borderRadius: 8, marginBottom: 14,
-                backgroundColor: '#fef2f2', border: '1px solid #fecaca',
-                fontSize: 13, color: '#dc2626',
+                backgroundColor: C.dangerLight, border: `1px solid ${C.dangerBorder}`,
+                fontSize: 13, color: C.danger,
               }}>⚠ {error}</div>
             )}
 
             <div style={{
-              backgroundColor: '#fff', borderRadius: 14,
+              backgroundColor: C.bgCard, borderRadius: 14,
               padding: '20px 18px', marginBottom: 16,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #e5e7eb',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: `1px solid ${C.border}`,
             }}>
               <div style={{ marginBottom: 14 }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 3, height: 14, backgroundColor: 'var(--capd-primary)', borderRadius: 2, display: 'inline-block' }} />
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 3, height: 14, backgroundColor: C.primary, borderRadius: 2, display: 'inline-block' }} />
                   공통 질문
                 </p>
-                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 3 }}>담당 의사 선생님이 설정한 질문입니다.</p>
+                <p style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>담당 의사 선생님이 설정한 질문입니다.</p>
               </div>
 
               {questions.map(q => (
@@ -374,8 +395,8 @@ export default function CommonSurveyPage() {
             {/* 진행 안내 */}
             <div style={{
               padding: '12px 16px', borderRadius: 10,
-              backgroundColor: '#f0f4ff', border: '1px solid #c7d2fe',
-              fontSize: 13, color: '#3730a3', marginBottom: 8,
+              backgroundColor: C.infoLight, border: `1px solid ${C.infoBorder}`,
+              fontSize: 13, color: C.infoText, marginBottom: 8,
             }}>
               💡 공통 질문 완료 후 AI가 맞춤 질문을 생성합니다.
             </div>
@@ -387,14 +408,14 @@ export default function CommonSurveyPage() {
       {!loading && recordId && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          backgroundColor: '#fff', borderTop: '1px solid #e5e7eb',
+          backgroundColor: C.bgCard, borderTop: `1px solid ${C.border}`,
           padding: '12px 20px', boxShadow: '0 -4px 12px rgba(0,0,0,0.08)', zIndex: 100,
         }}>
           <div style={{ maxWidth: 680, margin: '0 auto' }}>
             <button
               style={{
                 width: '100%', height: 52,
-                backgroundColor: allAnswered && !submitting ? 'var(--capd-primary)' : '#9ca3af',
+                backgroundColor: allAnswered && !submitting ? C.primary : C.grayMid,
                 color: '#fff', border: 'none', borderRadius: 10,
                 fontSize: 15, fontWeight: 700,
                 cursor: allAnswered && !submitting ? 'pointer' : 'not-allowed',

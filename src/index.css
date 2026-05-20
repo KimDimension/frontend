@@ -28,6 +28,12 @@
   --capd-primary-dark:  #5e5090;
   --capd-bg:            #f8f7fc;
   --capd-border:        #e5e7eb;
+
+  /* AI 섹션 액센트 (바이올렛) */
+  --ai-accent:          #7c3aed;
+  --ai-accent-light:    #f5f3ff;
+  --ai-accent-medium:   #ede9fe;
+  --ai-accent-border:   #ddd6fe;
 }
 
 *,

@@ -5,6 +5,7 @@ import {
   rejectRegistration,
 } from "../../api/auth";
 import type { PatientRegistrationInfo } from "../../types";
+import { useToast } from "../../hooks/useToast";
 
 const C = {
   primary:      'var(--capd-primary)',
@@ -101,6 +102,7 @@ export default function PatientApprovalPage() {
   const [pending, setPending] = useState<PatientRegistrationInfo[]>([])
   const [done,    setDone]    = useState<DoneItem[]>([])
   const [loading, setLoading] = useState(true)
+  const errToast = useToast(3000)
 
   const fetchPending = useCallback(async () => {
     setLoading(true)
@@ -119,7 +121,7 @@ export default function PatientApprovalPage() {
       setPending(prev => prev.filter(r => r.id !== reg.id))
       setDone(prev => [...prev, { ...reg, finalStatus: 'approved' }])
     } catch (e: any) {
-      alert(e?.response?.data?.detail ?? '승인에 실패했습니다.')
+      errToast.show(e?.response?.data?.detail ?? '승인에 실패했습니다.')
     }
   }
 
@@ -130,7 +132,7 @@ export default function PatientApprovalPage() {
       setPending(prev => prev.filter(r => r.id !== reg.id))
       setDone(prev => [...prev, { ...reg, finalStatus: 'rejected' }])
     } catch (e: any) {
-      alert(e?.response?.data?.detail ?? '거절에 실패했습니다.')
+      errToast.show(e?.response?.data?.detail ?? '거절에 실패했습니다.')
     }
   }
 

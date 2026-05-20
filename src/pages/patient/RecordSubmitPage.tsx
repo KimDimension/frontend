@@ -1,6 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../../hooks/useToast'
+
+const C = {
+  primary:      'var(--capd-primary)',
+  bg:           'var(--capd-bg)',
+  bgCard:       'var(--bg-card)',
+  border:       'var(--capd-border)',
+  text:         'var(--text-main)',
+  textSub:      'var(--text-sub)',
+  textMuted:    'var(--text-muted)',
+  success:      'var(--success)',
+  successLight: 'var(--success-light)',
+  successBorder:'#bbf7d0',
+  danger:       'var(--danger)',
+  dangerLight:  'var(--danger-light)',
+  dangerBorder: '#fecaca',
+}
 import {
   submitRecord,
   updateRecord,
@@ -204,7 +220,7 @@ export default function RecordSubmitPage() {
         <Header />
         <main style={{ maxWidth: 680, margin: '0 auto', padding: '80px 16px 40px', textAlign: 'center' }}>
           <div style={{ paddingTop: 60 }}>
-            <p style={{ color: '#9ca3af', fontSize: 14 }}>⏳ 불러오는 중...</p>
+            <p style={{ color: C.textMuted, fontSize: 14 }}>⏳ 불러오는 중...</p>
           </div>
         </main>
       </div>
@@ -222,17 +238,17 @@ export default function RecordSubmitPage() {
 
         {/* ── 날짜 / 상태 정보 카드 ── */}
         <div style={{
-          backgroundColor: '#fff', borderRadius: 14,
+          backgroundColor: C.bgCard, borderRadius: 14,
           padding: '16px 14px', marginBottom: 16,
           boxShadow: '0 2px 8px rgba(124,58,237,0.08)',
-          border: '1px solid var(--capd-border)',
+          border: `1px solid ${C.border}`,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <div>
-              <p style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>
+              <p style={{ fontSize: 16, fontWeight: 700, color: C.text }}>
                 {getKoreanDate()}
               </p>
-              <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+              <p style={{ fontSize: 13, color: C.textSub, marginTop: 4 }}>
                 {isSubmitted
                   ? '최종 제출된 기록입니다.'
                   : todayRecord && todayRecord.record_date !== todayStr()
@@ -249,9 +265,9 @@ export default function RecordSubmitPage() {
           {saveToast.message && (
             <div style={{
               marginTop: 12, padding: '9px 14px',
-              backgroundColor: '#f0fdf4', borderRadius: 8,
-              border: '1px solid #bbf7d0',
-              fontSize: 13, color: 'var(--success)',
+              backgroundColor: C.successLight, borderRadius: 8,
+              border: `1px solid ${C.successBorder}`,
+              fontSize: 13, color: C.success,
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               ✓ 오늘 기록이 저장되었습니다. 나중에 이어서 입력할 수 있어요.
@@ -262,9 +278,9 @@ export default function RecordSubmitPage() {
           {error && (
             <div style={{
               marginTop: 12, padding: '10px 14px',
-              backgroundColor: '#fef2f2', borderRadius: 8,
-              border: '1px solid #fecaca',
-              fontSize: 13, color: '#dc2626',
+              backgroundColor: C.dangerLight, borderRadius: 8,
+              border: `1px solid ${C.dangerBorder}`,
+              fontSize: 13, color: C.danger,
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               ⚠ {error}

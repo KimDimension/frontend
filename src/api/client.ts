@@ -1,4 +1,5 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import useAuthStore from '../store/authStore'
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
@@ -24,10 +25,8 @@ function processQueue(newToken: string) {
 }
 
 function forceLogout() {
-  localStorage.removeItem('access_token')
-  localStorage.removeItem('refresh_token')
-  localStorage.removeItem('user_name')
-  localStorage.removeItem('user_role')
+  // authStore.logout()이 localStorage 정리 + Zustand 상태 초기화를 함께 처리
+  useAuthStore.getState().logout()
   window.location.href = '/login'
 }
 
@@ -69,6 +68,10 @@ client.interceptors.response.use(
       )
       const newAccessToken: string = data.access_token
       localStorage.setItem('access_token', newAccessToken)
+      // 토큰 회전: 백엔드가 새 refresh token을 함께 반환하므로 갱신
+      if (data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token)
+      }
       processQueue(newAccessToken)
       axiosError.config!.headers.Authorization = `Bearer ${newAccessToken}`
       return client(axiosError.config!)

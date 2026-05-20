@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
+import { useToast } from "../../hooks/useToast";
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -318,6 +319,7 @@ export default function RecordDetailPage() {
   const [error,     setError]     = useState('')
   const [approving, setApproving] = useState(false)
   const [reverting, setReverting] = useState(false)
+  const errToast = useToast(3000)
 
   useEffect(() => {
     if (!recordId) return
@@ -344,9 +346,9 @@ export default function RecordDetailPage() {
       const res = await fetch(`${API}/api/v1/records/${recordId}/approve`, {
         method: 'PATCH', headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) { const err = await res.json(); alert(err.detail ?? '승인 실패'); return }
+      if (!res.ok) { const err = await res.json(); errToast.show(err.detail ?? '승인 실패'); return }
       setDetail(prev => prev ? { ...prev, status: 'reviewed' } : prev)
-    } catch { alert('승인 중 오류가 발생했습니다.') }
+    } catch { errToast.show('승인 중 오류가 발생했습니다.') }
     finally { setApproving(false) }
   }
 
@@ -359,9 +361,9 @@ export default function RecordDetailPage() {
       const res = await fetch(`${API}/api/v1/records/${recordId}/revert`, {
         method: 'PATCH', headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) { const err = await res.json(); alert(err.detail ?? '되돌리기 실패'); return }
+      if (!res.ok) { const err = await res.json(); errToast.show(err.detail ?? '되돌리기 실패'); return }
       setDetail(prev => prev ? { ...prev, status: 'submitted' } : prev)
-    } catch { alert('되돌리기 중 오류가 발생했습니다.') }
+    } catch { errToast.show('되돌리기 중 오류가 발생했습니다.') }
     finally { setReverting(false) }
   }
 

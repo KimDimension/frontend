@@ -110,6 +110,7 @@ export default function PatientMyPage() {
   const [confirmPw, setConfirmPw] = useState('')
   const [saving,   setSaving]   = useState(false)
   const saveToast = useToast(2000)
+  const errToast  = useToast(3000)
   const [formError, setFormError] = useState('')
 
   // 담당의사
@@ -234,7 +235,7 @@ export default function PatientMyPage() {
     if (!pendingReq || !window.confirm('신청을 취소하시겠습니까?')) return
     setConnectLoading(true)
     try { await cancelMyRequest(pendingReq.id); setPendingReq(null) }
-    catch (e: any) { alert(e?.response?.data?.detail ?? '취소에 실패했습니다.') }
+    catch (e: any) { errToast.show(e?.response?.data?.detail ?? '취소에 실패했습니다.') }
     finally { setConnectLoading(false) }
   }
 
@@ -244,7 +245,7 @@ export default function PatientMyPage() {
     try {
       await patientDischargeRequest()
       const r = await getMyPendingRequest(); setPendingReq(r.request)
-    } catch (e: any) { alert(e?.response?.data?.detail ?? '요청에 실패했습니다.') }
+    } catch (e: any) { errToast.show(e?.response?.data?.detail ?? '요청에 실패했습니다.') }
     finally { setConnectLoading(false) }
   }
 
