@@ -103,3 +103,9 @@ export const restoreAIQuestion = (id: number): Promise<void> =>
   client
     .post(`/api/v1/questions/ai/${id}/restore`)
     .then(() => undefined)
+
+/** AI 질문 확인 토글 (pending ↔ approved) */
+export const reviewAIQuestion = (id: number): Promise<{ status: string }> =>
+  client
+    .patch(`/api/v1/questions/ai/${id}/review`)
+    .then((r) => r.data)

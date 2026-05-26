@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { AIQuestionRow, listAIQuestions, rejectAIQuestion, restoreAIQuestion } from "../../api/questions";
+import { AIQuestionRow, listAIQuestions, rejectAIQuestion, restoreAIQuestion, reviewAIQuestion } from "../../api/questions";
 import { COLOR, btn, card, typography } from "../../styles/doctor";
 import { useToast } from "../../hooks/useToast";
 
-/* ── 아이콘 ────────────────────────────────────────────────────── */
+/* -- 아이콘 */
 const IconX = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
-/* ── 상태 배지 ─────────────────────────────────────────────────── */
+/* -- 상태 배지 */
 const StatusBadge = ({ status }: { status: string }) => {
   const map: Record<string, { label: string; color: string; bg: string }> = {
     pending:              { label: "검토 대기", color: COLOR.primary,  bg: COLOR.blue50 },
-    approved:             { label: "승인됨",    color: COLOR.success,  bg: COLOR.green50 },
+    approved:             { label: "확인됨",    color: COLOR.success,  bg: COLOR.green50 },
     rejected_for_patient: { label: "환자 거절", color: COLOR.danger,   bg: "#fff0f0" },
     rejected_global:      { label: "전역 거절", color: "#7a4f00",      bg: "#fff8e1" },
   };
@@ -26,40 +26,40 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-/* ── 질문 타입 라벨 ────────────────────────────────────────────── */
+/* -- 질문 타입 라벨 */
 const typeLabel = (t: string) =>
   ({ yes_no: "예/아니오", single_select: "단일 선택", multi_select: "다중 선택", short_text: "단답" }[t] ?? t);
 
-/* ── 메인 컴포넌트 ─────────────────────────────────────────────── */
+/* -- 메인 컴포넌트 */
 export default function AIReviewPage() {
   const [questions, setQuestions]         = useState<AIQuestionRow[]>([]);
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState("");
   const [patientFilter, setPatientFilter] = useState<number | "">("");
-  const [statusFilter, setStatusFilter]   = useState<string>("pending");
+  const [statusFilter, setStatusFilter]   = useState<string>("active");
   const [rejecting, setRejecting]         = useState<number | null>(null);
   const [restoring, setRestoring]         = useState<number | null>(null);
+  const [reviewing, setReviewing]         = useState<number | null>(null);
   const errToast = useToast(3000);
 
-  // 나이/성별 헬퍼
   const calcAge = (b: string | null, ref?: string) => {
-    if (!b) return null
-    const refD  = ref ? new Date(ref + 'T00:00:00') : new Date()
-    const birth = new Date(b + 'T00:00:00')
-    let age = refD.getFullYear() - birth.getFullYear()
-    const m = refD.getMonth() - birth.getMonth()
-    if (m < 0 || (m === 0 && refD.getDate() < birth.getDate())) age--
-    return age
-  }
+    if (!b) return null;
+    const refD  = ref ? new Date(ref + "T00:00:00") : new Date();
+    const birth = new Date(b + "T00:00:00");
+    let age = refD.getFullYear() - birth.getFullYear();
+    const m = refD.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && refD.getDate() < birth.getDate())) age--;
+    return age;
+  };
   const patientLabel = (name: string, birth: string | null, gender: string | null, ref?: string) => {
-    const age = calcAge(birth, ref); const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
-    if (age !== null && g) return `${name}(${age}/${g})`
-    if (age !== null) return `${name}(${age})`
-    if (g) return `${name}(${g})`
-    return name
-  }
+    const age = calcAge(birth, ref);
+    const g = gender === "m" ? "남" : gender === "f" ? "여" : null;
+    if (age !== null && g) return `${name}(${age}/${g})`;
+    if (age !== null) return `${name}(${age})`;
+    if (g) return `${name}(${g})`;
+    return name;
+  };
 
-  // 환자 목록 (questions에서 추출)
   const patients = Array.from(
     new Map(questions.map((q) => [q.patient_id, { name: q.patient_name, birth: q.patient_birth_date, gender: q.patient_gender }])).entries()
   ).map(([id, p]) => ({ id, name: p.name, birth: p.birth, gender: p.gender }));
@@ -72,13 +72,23 @@ export default function AIReviewPage() {
       .finally(() => setLoading(false));
   }, [patientFilter]);
 
-  const filtered = questions.filter((q) =>
-    statusFilter === "all" ? true : q.status === statusFilter
-  );
+  const pendingCount = questions.filter((q) => q.status === "pending").length;
+
+  const filtered = questions.filter((q) => {
+    if (statusFilter === "all")    return true;
+    if (statusFilter === "active") return q.status === "pending" || q.status === "approved";
+    return q.status === statusFilter;
+  });
+
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    if (a.status === "pending" && b.status !== "pending") return -1;
+    if (a.status !== "pending" && b.status === "pending") return 1;
+    return 0;
+  });
 
   const handleReject = async (q: AIQuestionRow, scope: "patient" | "global") => {
     const label = scope === "global" ? "전체 환자에게 전역 거절" : "이 환자에게만 거절";
-    if (!window.confirm(`"${q.question_text}"\n\n→ ${label}하시겠습니까?`)) return;
+    if (!window.confirm(`"${q.question_text}"\n\n-> ${label}하시겠습니까?`)) return;
     setRejecting(q.id);
     try {
       await rejectAIQuestion(q.id, scope);
@@ -96,14 +106,41 @@ export default function AIReviewPage() {
     }
   };
 
+  const handleReview = async (q: AIQuestionRow) => {
+    setReviewing(q.id);
+    try {
+      const { status } = await reviewAIQuestion(q.id);
+      setQuestions((prev) =>
+        prev.map((item) => item.id === q.id ? { ...item, status } : item)
+      );
+    } catch {
+      errToast.show("확인 처리 중 오류가 발생했습니다.");
+    } finally {
+      setReviewing(null);
+    }
+  };
+
   return (
     <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
       {/* 헤더 */}
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={typography.pageTitle}>AI 맞춤 질문 검토</h1>
-        <p style={typography.pageSubtitle}>
-          AI가 환자 기록을 분석해 생성한 질문을 검토하고, 부적절한 질문을 거절하세요.
-        </p>
+      <div style={{ marginBottom: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <h1 style={typography.pageTitle}>AI 맞춤 질문 검토</h1>
+          <p style={typography.pageSubtitle}>
+            AI가 환자 기록을 분석해 생성한 질문을 검토하고, 부적절한 질문을 거절하세요.
+          </p>
+        </div>
+        {pendingCount > 0 && (
+          <span style={{
+            fontSize: 13, fontWeight: 700,
+            padding: "4px 12px", borderRadius: 99,
+            background: "#fff0f0", color: COLOR.danger,
+            border: `1px solid ${COLOR.danger}`,
+            whiteSpace: "nowrap", alignSelf: "center",
+          }}>
+            미확인 {pendingCount}개
+          </span>
+        )}
       </div>
 
       {/* 필터 바 */}
@@ -124,15 +161,16 @@ export default function AIReviewPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLOR.grayLight}`, fontSize: 13, color: COLOR.text, background: COLOR.white }}
         >
-          <option value="pending">검토 대기</option>
-          <option value="approved">승인됨</option>
+          <option value="active">전체 (거절 제외)</option>
+          <option value="pending">미확인</option>
+          <option value="approved">확인됨</option>
           <option value="rejected_for_patient">환자 거절</option>
           <option value="rejected_global">전역 거절</option>
           <option value="all">전체</option>
         </select>
 
         <span style={{ marginLeft: "auto", fontSize: 12, color: COLOR.textMuted }}>
-          {filtered.length}개 질문
+          {sortedFiltered.length}개 질문
         </span>
       </div>
 
@@ -145,104 +183,126 @@ export default function AIReviewPage() {
         <div style={{ textAlign: "center", padding: "40px", color: COLOR.danger, fontSize: 13 }}>
           {error}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : sortedFiltered.length === 0 ? (
         <div style={{ ...card.base, textAlign: "center", padding: "40px 20px", color: COLOR.textMuted, fontSize: 13 }}>
           해당 조건의 AI 질문이 없습니다.
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {filtered.map((q) => {
+          {sortedFiltered.map((q) => {
             const isRejected = q.status === "rejected_for_patient" || q.status === "rejected_global";
+            const isReviewed = q.status === "approved";
             return (
-            <div
-              key={q.id}
-              style={{
-                ...card.base,
-                padding: 0,
-                borderLeft: q.status === "pending"
-                  ? `3px solid ${COLOR.primary}`
-                  : `3px solid ${COLOR.grayLight}`,
-                overflow: "hidden",
-              }}
-            >
-              {/* 흐린 영역 (내용) */}
-              <div style={{ padding: "14px 16px", paddingBottom: isRejected ? 10 : 14, opacity: q.status !== "pending" ? 0.5 : 1, transition: "opacity 0.15s" }}>
-                {/* 상단: 환자명 + 날짜 + 타입 + 상태 */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: COLOR.text }}>{patientLabel(q.patient_name, q.patient_birth_date, q.patient_gender, q.record_date)}</span>
-                  <span style={{ fontSize: 11, color: COLOR.textMuted }}>{q.record_date}</span>
-                  <span style={{ fontSize: 11, color: COLOR.gray, background: COLOR.grayBg, padding: "1px 7px", borderRadius: 99 }}>
-                    {typeLabel(q.question_type)}
-                  </span>
-                  <StatusBadge status={q.status} />
+              <div
+                key={q.id}
+                style={{
+                  ...card.base,
+                  padding: 0,
+                  borderLeft: q.status === "pending"
+                    ? `3px solid ${COLOR.primary}`
+                    : q.status === "approved"
+                    ? `3px solid ${COLOR.success}`
+                    : `3px solid ${COLOR.grayLight}`,
+                  overflow: "hidden",
+                }}
+              >
+                {/* 카드 내용 */}
+                <div style={{ padding: "14px 16px", paddingBottom: isRejected ? 10 : 14, opacity: isRejected ? 0.45 : isReviewed ? 0.65 : 1, transition: "opacity 0.15s" }}>
+                  {/* 상단: 환자명 + 날짜 + 타입 + 상태 + 확인 체크박스 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: COLOR.text }}>
+                      {patientLabel(q.patient_name, q.patient_birth_date, q.patient_gender, q.record_date)}
+                    </span>
+                    <span style={{ fontSize: 11, color: COLOR.textMuted }}>{q.record_date}</span>
+                    <span style={{ fontSize: 11, color: COLOR.gray, background: COLOR.grayBg, padding: "1px 7px", borderRadius: 99 }}>
+                      {typeLabel(q.question_type)}
+                    </span>
+                    <StatusBadge status={q.status} />
+                    {!isRejected && (
+                      <label
+                        style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, cursor: reviewing === q.id ? "not-allowed" : "pointer", userSelect: "none" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isReviewed}
+                          disabled={reviewing === q.id}
+                          onChange={() => handleReview(q)}
+                          style={{ width: 15, height: 15, accentColor: COLOR.primary, cursor: "pointer" }}
+                        />
+                        <span style={{ fontSize: 12, color: isReviewed ? COLOR.textMuted : COLOR.primary, fontWeight: isReviewed ? 400 : 600 }}>
+                          {reviewing === q.id ? "처리 중..." : isReviewed ? "확인됨" : "확인"}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+
+                  {/* 질문 내용 */}
+                  <p style={{ margin: "0 0 6px", fontSize: 14, color: COLOR.text, fontWeight: 500, lineHeight: 1.5 }}>
+                    {q.question_text}
+                  </p>
+
+                  {/* 생성 이유 */}
+                  {q.reason && (
+                    <p style={{ margin: "0 0 10px", fontSize: 12, color: COLOR.textMuted, lineHeight: 1.4 }}>
+                      생성 이유: {q.reason}
+                    </p>
+                  )}
+
+                  {/* 거절 버튼 (pending/approved 상태만) */}
+                  {!isRejected && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => handleReject(q, "patient")}
+                        disabled={rejecting === q.id}
+                        style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.danger}`, color: COLOR.danger, display: "inline-flex", alignItems: "center", gap: 4 }}
+                      >
+                        <IconX /> 이 환자만 거절
+                      </button>
+                      <button
+                        onClick={() => handleReject(q, "global")}
+                        disabled={rejecting === q.id}
+                        style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.gray}`, color: COLOR.gray, display: "inline-flex", alignItems: "center", gap: 4 }}
+                      >
+                        <IconX /> 전역 거절
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* 질문 내용 */}
-                <p style={{ margin: "0 0 6px", fontSize: 14, color: COLOR.text, fontWeight: 500, lineHeight: 1.5 }}>
-                  {q.question_text}
-                </p>
-
-                {/* 생성 이유 */}
-                {q.reason && (
-                  <p style={{ margin: "0 0 10px", fontSize: 12, color: COLOR.textMuted, lineHeight: 1.4 }}>
-                    💡 생성 이유: {q.reason}
-                  </p>
-                )}
-
-                {/* 거절 버튼 (pending 상태만) */}
-                {q.status === "pending" && (
-                  <div style={{ display: "flex", gap: 8 }}>
+                {/* 복구 버튼 */}
+                {isRejected && (
+                  <div style={{ padding: "8px 16px 12px", borderTop: `1px solid ${COLOR.grayLight}`, background: "#fafbfc" }}>
                     <button
-                      onClick={() => handleReject(q, "patient")}
-                      disabled={rejecting === q.id}
-                      style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.danger}`, color: COLOR.danger, display: "inline-flex", alignItems: "center", gap: 4 }}
+                      onClick={async () => {
+                        if (!window.confirm("이 질문을 검토 대기 상태로 복구하시겠습니까?")) return;
+                        setRestoring(q.id);
+                        try {
+                          await restoreAIQuestion(q.id);
+                          setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, status: "pending" } : item));
+                        } catch {
+                          errToast.show("복구 중 오류가 발생했습니다.");
+                        } finally {
+                          setRestoring(null);
+                        }
+                      }}
+                      disabled={restoring === q.id}
+                      style={{
+                        background: COLOR.primary, color: "#fff",
+                        border: "none", borderRadius: 6,
+                        padding: "6px 14px", fontSize: 12, fontWeight: 700,
+                        cursor: restoring === q.id ? "not-allowed" : "pointer",
+                        opacity: restoring === q.id ? 0.7 : 1,
+                        fontFamily: "inherit", transition: "opacity 0.15s",
+                      }}
                     >
-                      <IconX /> 이 환자만 거절
-                    </button>
-                    <button
-                      onClick={() => handleReject(q, "global")}
-                      disabled={rejecting === q.id}
-                      style={{ ...btn.sm, background: "transparent", border: `1px solid ${COLOR.gray}`, color: COLOR.gray, display: "inline-flex", alignItems: "center", gap: 4 }}
-                    >
-                      <IconX /> 전역 거절
+                      {restoring === q.id ? "복구 중..." : "<- 복구"}
                     </button>
                   </div>
                 )}
               </div>
-
-              {/* 복구 버튼 — opacity 외부에 배치해서 항상 선명하게 */}
-              {isRejected && (
-                <div style={{ padding: "8px 16px 12px", borderTop: `1px solid ${COLOR.grayLight}`, background: "#fafbfc" }}>
-                  <button
-                    onClick={async () => {
-                      if (!window.confirm("이 질문을 검토 대기 상태로 복구하시겠습니까?")) return;
-                      setRestoring(q.id);
-                      try {
-                        await restoreAIQuestion(q.id);
-                        setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, status: "pending" } : item));
-                      } catch {
-                        errToast.show("복구 중 오류가 발생했습니다.");
-                      } finally {
-                        setRestoring(null);
-                      }
-                    }}
-                    disabled={restoring === q.id}
-                    style={{
-                      background: COLOR.primary, color: "#fff",
-                      border: "none", borderRadius: 6,
-                      padding: "6px 14px", fontSize: 12, fontWeight: 700,
-                      cursor: restoring === q.id ? "not-allowed" : "pointer",
-                      opacity: restoring === q.id ? 0.7 : 1,
-                      fontFamily: "inherit", transition: "opacity 0.15s",
-                    }}
-                  >
-                    {restoring === q.id ? "복구 중..." : "↩ 복구"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )})}
-
+            );
+          })}
         </div>
       )}
     </main>
