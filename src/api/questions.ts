@@ -77,6 +77,7 @@ export interface AIQuestionRow {
   question_text: string
   question_type: string
   reason: string | null
+  rejected_reason: string | null
   status: string
   created_at: string
 }
@@ -93,19 +94,30 @@ export const listAIQuestions = (patient_id?: number): Promise<AIQuestionRow[]> =
 export const rejectAIQuestion = (
   id: number,
   scope: 'patient' | 'global',
+  reason?: string,
 ): Promise<void> =>
   client
-    .post(`/api/v1/questions/ai/${id}/reject`, { scope })
+    .post(`/api/v1/questions/ai/${id}/reject`, { scope, reason: reason || null })
     .then(() => undefined)
 
-/** AI 질문 복구 (거절 → 검토 대기) */
+/** AI 질문 복구 (거절 -> 검토 대기) */
 export const restoreAIQuestion = (id: number): Promise<void> =>
   client
     .post(`/api/v1/questions/ai/${id}/restore`)
     .then(() => undefined)
 
-/** AI 질문 확인 토글 (pending ↔ approved) */
+/** AI 질문 확인 토글 (pending <-> approved) */
 export const reviewAIQuestion = (id: number): Promise<{ status: string }> =>
   client
     .patch(`/api/v1/questions/ai/${id}/review`)
     .then((r) => r.data)
+
+/** AI 질문을 공통질문으로 등록 */
+export const promoteToCommonQuestion = (q: AIQuestionRow): Promise<void> =>
+  client
+    .post('/api/v1/questions/common', {
+      question_text: q.question_text,
+      question_type: q.question_type,
+      target_all_patients: true,
+    })
+    .then(() => undefined)
