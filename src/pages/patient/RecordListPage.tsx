@@ -2,6 +2,29 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyRecords, DailyRecordResponse } from '../../api/records'
 import { getMe } from '../../api/auth'
+import client from '../../api/client'
+
+// ── 설문 응답 타입 ───────────────────────────────────────────────
+interface SurveyQA {
+  question_id: number
+  question_text: string
+  question_type: string
+  options: string[] | null
+  reason: string | null
+  choice: string | null
+  text_answer: string | null
+  answered: boolean
+}
+interface SurveyData {
+  common_questions: SurveyQA[]
+  ai_questions: SurveyQA[]
+  answered_count: number
+  total_count: number
+}
+const getSurveyResponses = async (recordId: number): Promise<SurveyData> => {
+  const res = await client.get(`/api/v1/surveys/my-responses/${recordId}`)
+  return res.data
+}
 
 const C = {
   primary:      'var(--capd-primary)',
@@ -106,8 +129,136 @@ function ExchangeMini({ record }: { record: DailyRecordResponse }) {
   )
 }
 
-function RecordItem({ record, isOpen, onToggle }: {
-  record: DailyRecordResponse; isOpen: boolean; onToggle: () => void
+// ── 설문 답변 표시 헬퍼 ──────────────────────────────────────────
+function answerText(q: SurveyQA): string {
+  if (!q.answered) return '미응답'
+  if (q.choice === 'yes') return '예'
+  if (q.choice === 'no') return '아니오'
+  if (q.text_answer) return q.text_answer
+  return '—'
+}
+
+// ── 설문 모달 ────────────────────────────────────────────────────
+function SurveyModal({ recordDate, data, loading, onClose }: {
+  recordDate: string
+  data: SurveyData | null
+  loading: boolean
+  onClose: () => void
+}) {
+  const allQs = data ? [...data.common_questions, ...data.ai_questions] : []
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 300,
+        background: 'rgba(0,0,0,0.45)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 520,
+          background: '#fff', borderRadius: '20px 20px 0 0',
+          padding: '0 0 32px',
+          maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+          boxShadow: '0 -4px 32px rgba(0,0,0,0.18)',
+        }}
+      >
+        {/* 헤더 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 18px 14px',
+          borderBottom: `1px solid ${C.border}`,
+          flexShrink: 0,
+        }}>
+          <div>
+            <p style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>질문 &amp; 답변</p>
+            <p style={{ fontSize: 12, color: C.textMuted, margin: '3px 0 0' }}>{formatDateShort(recordDate)}</p>
+          </div>
+          {data && (
+            <span style={{
+              fontSize: 12, fontWeight: 700,
+              background: C.primaryLight, color: C.primaryDark,
+              padding: '4px 10px', borderRadius: 20,
+            }}>{data.answered_count}/{data.total_count} 응답</span>
+          )}
+          <button
+            onClick={onClose}
+            style={{
+              background: C.bg, border: 'none', borderRadius: 8,
+              width: 32, height: 32, fontSize: 18, color: C.textMuted,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >✕</button>
+        </div>
+
+        {/* 내용 */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '16px 18px' }}>
+          {loading && (
+            <p style={{ textAlign: 'center', color: C.textMuted, fontSize: 14, paddingTop: 24 }}>⏳ 불러오는 중...</p>
+          )}
+          {!loading && data && allQs.length === 0 && (
+            <p style={{ textAlign: 'center', color: C.textLight, fontSize: 14, paddingTop: 24 }}>이 기록에 연결된 질문이 없어요.</p>
+          )}
+          {!loading && data && allQs.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {data.common_questions.length > 0 && (
+                <p style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>공통 질문</p>
+              )}
+              {data.common_questions.map((q, i) => (
+                <QAItem key={`c-${q.question_id}`} q={q} index={i + 1} />
+              ))}
+              {data.ai_questions.length > 0 && (
+                <p style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '8px 0 4px' }}>AI 추천 질문</p>
+              )}
+              {data.ai_questions.map((q, i) => (
+                <QAItem key={`a-${q.question_id}`} q={q} index={data.common_questions.length + i + 1} isAi />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function QAItem({ q, index, isAi }: { q: SurveyQA; index: number; isAi?: boolean }) {
+  const ans = answerText(q)
+  const answered = q.answered
+  return (
+    <div style={{
+      background: C.bg, borderRadius: 10, padding: '12px 14px',
+      border: `1px solid ${answered ? C.border : '#fde68a'}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+        <span style={{
+          flexShrink: 0, fontSize: 10, fontWeight: 700,
+          background: isAi ? C.primaryLight : '#f3f4f6',
+          color: isAi ? C.primaryDark : C.textMuted,
+          padding: '2px 7px', borderRadius: 10,
+        }}>{isAi ? 'AI' : `Q${index}`}</span>
+        <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0, lineHeight: 1.5 }}>{q.question_text}</p>
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        paddingLeft: 2,
+      }}>
+        <span style={{ fontSize: 11, color: C.textLight }}>→</span>
+        <span style={{
+          fontSize: 13, fontWeight: 700,
+          color: answered ? C.primary : '#d97706',
+        }}>{ans}</span>
+        {!answered && (
+          <span style={{ fontSize: 10, color: '#d97706', fontWeight: 600 }}>미응답</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function RecordItem({ record, isOpen, onToggle, onOpenSurvey }: {
+  record: DailyRecordResponse; isOpen: boolean; onToggle: () => void; onOpenSurvey: () => void
 }) {
   const uf = record.total_ultrafiltration
   const summaryParts = [
@@ -118,18 +269,35 @@ function RecordItem({ record, isOpen, onToggle }: {
 
   return (
     <div style={{ background: '#fff', borderRadius: 12, marginBottom: 8, overflow: 'hidden', border: `1px solid ${C.border}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-      <div
-        onClick={onToggle}
-        style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', cursor: 'pointer', userSelect: 'none', gap: 10, background: isOpen ? C.bg : '#fff' }}
-      >
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>{formatDateShort(record.record_date)}</p>
-          {summaryParts.length > 0 && (
-            <p style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{summaryParts.join(' · ')}</p>
-          )}
+      <div style={{ display: 'flex', alignItems: 'center', background: isOpen ? C.bg : '#fff' }}>
+        <div
+          onClick={onToggle}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '14px 12px 14px 16px', cursor: 'pointer', userSelect: 'none', gap: 10 }}
+        >
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>{formatDateShort(record.record_date)}</p>
+            {summaryParts.length > 0 && (
+              <p style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{summaryParts.join(' · ')}</p>
+            )}
+          </div>
+          <Badge status={record.status} />
+          <span style={{ fontSize: 11, color: C.textLight, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
         </div>
-        <Badge status={record.status} />
-        <span style={{ fontSize: 11, color: C.textLight, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▼</span>
+        {record.status !== 'draft' && (
+          <button
+            onClick={e => { e.stopPropagation(); onOpenSurvey() }}
+            title="질문/답변 보기"
+            style={{
+              flexShrink: 0, marginRight: 12,
+              height: 34, padding: '0 10px', borderRadius: 8,
+              border: `1.5px solid ${C.border}`,
+              background: '#fff', color: C.primary,
+              fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              whiteSpace: 'nowrap', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >💬 질문/답변</button>
+        )}
       </div>
 
       {isOpen && (
@@ -200,12 +368,26 @@ function MonthGroup({ label, count, isOpen, onToggle, children }: {
 
 export default function RecordListPage() {
   const navigate = useNavigate()
-  const [records,    setRecords]    = useState<DailyRecordResponse[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [openId,     setOpenId]     = useState<number | null>(null)
-  const [openMonths, setOpenMonths] = useState<Set<string>>(new Set())
-  const [hasDoctor,  setHasDoctor]  = useState<boolean | null>(null)
-  const [isNarrow,   setIsNarrow]   = useState(window.innerWidth < 420)
+  const [records,      setRecords]      = useState<DailyRecordResponse[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [openId,       setOpenId]       = useState<number | null>(null)
+  const [openMonths,   setOpenMonths]   = useState<Set<string>>(new Set())
+  const [hasDoctor,    setHasDoctor]    = useState<boolean | null>(null)
+  const [isNarrow,     setIsNarrow]     = useState(window.innerWidth < 420)
+  // 설문 모달
+  const [surveyRecord, setSurveyRecord] = useState<DailyRecordResponse | null>(null)
+  const [surveyData,   setSurveyData]   = useState<SurveyData | null>(null)
+  const [surveyLoading,setSurveyLoading]= useState(false)
+
+  const openSurveyModal = (record: DailyRecordResponse) => {
+    setSurveyRecord(record)
+    setSurveyData(null)
+    setSurveyLoading(true)
+    getSurveyResponses(record.id)
+      .then(d => setSurveyData(d))
+      .catch(() => setSurveyData({ common_questions: [], ai_questions: [], answered_count: 0, total_count: 0 }))
+      .finally(() => setSurveyLoading(false))
+  }
 
   useEffect(() => {
     const handleResize = () => setIsNarrow(window.innerWidth < 420)
@@ -241,6 +423,15 @@ export default function RecordListPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Noto Sans KR', sans-serif" }}>
+      {/* 설문 모달 */}
+      {surveyRecord && (
+        <SurveyModal
+          recordDate={surveyRecord.record_date}
+          data={surveyData}
+          loading={surveyLoading}
+          onClose={() => { setSurveyRecord(null); setSurveyData(null) }}
+        />
+      )}
       {/* 헤더 */}
       <header style={{
         position: 'fixed', top: 0, left: 0, right: 0, height: 56,
@@ -364,7 +555,8 @@ export default function RecordListPage() {
                     isOpen={openMonths.has(key)} onToggle={() => setOpenMonths(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n })}>
                     {recs.map(rec => (
                       <RecordItem key={rec.id} record={rec} isOpen={openId === rec.id}
-                        onToggle={() => setOpenId(prev => prev === rec.id ? null : rec.id)} />
+                        onToggle={() => setOpenId(prev => prev === rec.id ? null : rec.id)}
+                        onOpenSurvey={() => openSurveyModal(rec)} />
                                      ))}
                   </MonthGroup>
                 ))}

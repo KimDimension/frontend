@@ -19,7 +19,6 @@ const C = {
   dangerLight:  'var(--danger-light)',
 }
 
-const CONC_OPTIONS = [1.5, 2.5, 4.25, 7.5]
 const SESSIONS = [1, 2, 3, 4, 5]
 
 const emptyExchange = (session_number: number): ExchangeRecord => ({
@@ -159,6 +158,64 @@ function Stepper({
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>+{step >= 10 ? step : ''}</button>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── 농도 입력 필드 ───────────────────────────────────────────────
+function ConcInput({
+  value, onChange, readOnly,
+}: {
+  value: number | undefined
+  onChange: (v: number | undefined) => void
+  readOnly?: boolean
+}) {
+  const [raw, setRaw] = useState(value !== undefined ? String(value) : '')
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/[^0-9.]/g, '')
+    setRaw(v)
+    if (v === '' || v === '.') { onChange(undefined); return }
+    const num = parseFloat(v)
+    if (!isNaN(num)) onChange(num)
+    // 부분 입력("1.") 중에는 value 업데이트 보류
+  }
+
+  const handleBlur = () => {
+    if (value !== undefined) setRaw(String(value))
+    else setRaw('')
+  }
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
+        농도 (%)
+      </label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9.]*"
+          placeholder="예) 1.5 / 2.5 / 4.25"
+          value={readOnly ? (value !== undefined ? String(value) : '—') : raw}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          readOnly={readOnly}
+          style={{
+            width: '100%', height: 60, borderRadius: 12, boxSizing: 'border-box',
+            border: `1.5px solid ${value !== undefined ? C.primary : C.border}`,
+            background: readOnly ? C.bg : '#fff',
+            fontSize: 22, fontWeight: 700,
+            color: value !== undefined ? C.text : C.textLight,
+            textAlign: 'center', outline: 'none', fontFamily: 'inherit',
+            paddingRight: '40px', paddingLeft: '12px',
+          }}
+        />
+        <span style={{
+          position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 15, color: C.textMuted, pointerEvents: 'none',
+        }}>%</span>
       </div>
     </div>
   )
@@ -435,37 +492,12 @@ export default function RecordForm({
           </div>
 
           {/* 농도 */}
-          <div>
-            <label style={{ display: 'block', fontSize: 17, fontWeight: 600, color: C.textMuted, marginBottom: 10 }}>
-              농도 (%)
-            </label>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {CONC_OPTIONS.map(opt => {
-                const active = ex.infusion_concentration === opt
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      if (isReadOnly) return
-                      updateExchange(activeSession, {
-                        infusion_concentration: active ? undefined : opt,
-                      })
-                    }}
-                    style={{
-                      flex: 1, height: 52, borderRadius: 12,
-                      border: `1.5px solid ${active ? C.primary : C.border}`,
-                      background: active ? C.primaryLight : '#fff',
-                      color: active ? C.primary : C.textMuted,
-                      fontSize: 17, fontWeight: active ? 700 : 500,
-                      cursor: isReadOnly ? 'default' : 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                  >{opt}</button>
-                )
-              })}
-            </div>
-          </div>
+          <ConcInput
+            key={`conc_${activeSession}`}
+            value={ex.infusion_concentration}
+            onChange={v => updateExchange(activeSession, { infusion_concentration: v })}
+            readOnly={isReadOnly}
+          />
 
           {/* 주입량 */}
           <Stepper
