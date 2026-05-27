@@ -321,9 +321,17 @@ export default function RecordForm({
 
   const totalUltrafiltration = exchanges.reduce((sum, ex) => sum + (calcUF(ex) ?? 0), 0)
 
+  // 한 개라도 입력됐으면 true (탭 점 표시용)
   const isFilled = (ex: ExchangeRecord) =>
     !!(ex.exchange_time || ex.drainage_volume !== undefined ||
        ex.infusion_concentration !== undefined || ex.infusion_weight !== undefined)
+
+  // 4개 필수 필드 모두 입력됐을 때만 true (실제 제출 포함 여부)
+  const isComplete = (ex: ExchangeRecord) =>
+    !!(ex.exchange_time &&
+       ex.infusion_concentration !== undefined &&
+       ex.infusion_weight !== undefined &&
+       ex.drainage_volume !== undefined)
 
   const softWarnings = useMemo(() => {
     if (isReadOnly) return []
@@ -352,7 +360,7 @@ export default function RecordForm({
 
   const buildPayload = (): DailyRecordCreate => {
     const validExchanges = exchanges
-      .filter(isFilled)
+      .filter(isComplete)
       .map(ex => ({ ...ex, ultrafiltration: calcUF(ex) }))
     return {
       record_date:           todayStr(),
@@ -367,7 +375,8 @@ export default function RecordForm({
     }
   }
 
-  const filledCount = exchanges.filter(isFilled).length
+  const completeCount = exchanges.filter(isComplete).length  // 실제 제출될 회차 수
+  const partialCount  = exchanges.filter(ex => isFilled(ex) && !isComplete(ex)).length  // 미완성 회차 수
 
   const handleDraftSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -382,7 +391,7 @@ export default function RecordForm({
   }
 
   const handleFinalClick = () => {
-    if (filledCount < 3) setSubmitWarning(true)
+    if (completeCount < 3) setSubmitWarning(true)
     else handleFinalSubmit()
   }
 
@@ -403,10 +412,15 @@ export default function RecordForm({
         <div style={{ padding: '16px 18px 12px', borderBottom: `1px solid ${C.border}` }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: C.text }}>투석 교환 기록</h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: C.textMuted }}>
-            총 {filledCount}회 입력됨
+            완성 {completeCount}회 제출 예정
+            {partialCount > 0 && (
+              <span style={{ marginLeft: 8, color: C.warning, fontWeight: 700 }}>
+                · {partialCount}회 미완성 (제외됨)
+              </span>
+            )}
             {totalUltrafiltration > 0 && (
-              <span style={{ marginLeft: 10, color: C.primary, fontWeight: 700 }}>
-                총 제수량 {totalUltrafiltration}g
+              <span style={{ marginLeft: 8, color: C.primary, fontWeight: 700 }}>
+                · 총 제수량 {totalUltrafiltration}g
               </span>
             )}
           </p>
@@ -415,8 +429,11 @@ export default function RecordForm({
         {/* 회차 탭 */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, background: C.bg }}>
           {SESSIONS.map((n, i) => {
-            const filled = isFilled(exchanges[i])
-            const active = activeSession === i
+            const filled   = isFilled(exchanges[i])
+            const complete = isComplete(exchanges[i])
+            const partial  = filled && !complete
+            const active   = activeSession === i
+            const dotColor = active ? C.primary : complete ? '#22c55e' : '#f59e0b'
             return (
               <button
                 key={n}
@@ -438,7 +455,8 @@ export default function RecordForm({
                   <span style={{
                     position: 'absolute', top: 8, right: '50%', transform: 'translateX(8px)',
                     width: 7, height: 7, borderRadius: '50%',
-                    background: active ? C.primary : '#22c55e',
+                    background: dotColor,
+                    boxShadow: partial && !active ? '0 0 0 1.5px #fbbf24' : 'none',
                   }} />
                 )}
               </button>
@@ -792,7 +810,7 @@ export default function RecordForm({
               borderRadius: 14, fontSize: 14, color: '#92400e',
             }}>
               <p style={{ fontWeight: 700, marginBottom: 8, fontSize: 15 }}>
-                ⚠ 교환 기록이 {filledCount}회차만 입력되었어요
+                ⚠ 완성된 교환 기록이 {completeCount}회차뿐이에요
               </p>
               <p style={{ marginBottom: 14, lineHeight: 1.6 }}>
                 하루 3회 미만은 투석이 부족할 수 있습니다.<br />
@@ -837,7 +855,7 @@ export default function RecordForm({
                 fontFamily: 'inherit', transition: 'all 0.15s',
               }}
               className="capd-btn-outline-hover"
-            >{isDraftLoading ? '저장 중...' : '기록 저장'}</button>
+>{isDraftLoading ? '저장 중...' : '기록 저장'}</button>
 
             <button
               type="button"
