@@ -697,12 +697,12 @@ export default function DashboardPage() {
     <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: 36 }} />
-          <col style={{ width: '18%'  }} />
-          <col style={{ width: '10%'  }} />
-          <col style={{ width: '18%'  }} />
-          <col style={{ width: '13%'  }} />
-          <col style={{ width: '13%'  }} />
+          <col style={{ width: '3%'  }} />
+          <col style={{ width: '22%' }} />
+          <col style={{ width: '12%' }} />
+          <col style={{ width: '23%' }} />
+          <col style={{ width: '20%' }} />
+          <col style={{ width: '20%' }} />
         </colgroup>
         <thead>
           <tr style={{ background: C.bg }}>
@@ -822,19 +822,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 메인: 달력(왼쪽 sticky) + 목록(오른쪽) */}
+      {/* 메인: 목록(왼쪽) + 달력(오른쪽 sticky) */}
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
-        {/* 왼쪽: 달력 (데스크톱만) */}
-        {!isMobile && (
-          <div style={{ flexShrink: 0, width: 220, position: 'sticky', top: 20 }}>
-            <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
-            </div>
-          </div>
-        )}
-
-        {/* 오른쪽: 검색 + 필터 + 환자 목록 */}
+        {/* 왼쪽: 검색 + 필터 + 환자 목록 */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -848,6 +839,15 @@ export default function DashboardPage() {
           </div>
           {PatientList}
         </div>
+
+        {/* 오른쪽: 달력 sticky (데스크톱만) */}
+        {!isMobile && (
+          <div style={{ flexShrink: 0, width: 220, position: 'sticky', top: 20 }}>
+            <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
+            </div>
+          </div>
+        )}
 
       </div>
 
