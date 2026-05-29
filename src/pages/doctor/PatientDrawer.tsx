@@ -170,8 +170,9 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [origNote,    setOrigNote]    = useState('')
   const [loading,     setLoading]     = useState(true)
   const [saving,      setSaving]      = useState(false)
-  const saveToast = useToast(2000)
-  const errToast  = useToast(3000)
+  const saveToast     = useToast(2000)
+  const errToast      = useToast(3000)
+  const handoverToast = useToast(2500)
   const [discharging, setDischarging] = useState(false)
   const [err,         setErr]         = useState('')
   const [trend,       setTrend]       = useState<TrendPoint[]>([])
@@ -247,7 +248,8 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail ?? '인수인계 실패')
-      onDischarge(patientId); onClose()
+      handoverToast.show(`✓ ${data.message ?? '인수인계 완료'}`)
+      setTimeout(() => { onDischarge(patientId); onClose() }, 1200)
     } catch (e: any) { errToast.show(e.message) } finally { setHandoverLoading(false) }
   }
 
@@ -474,9 +476,24 @@ td{padding:6px 8px;border:1px solid #e5e7eb;font-size:11px;vertical-align:top}tr
             </>
           )}
         </div>
+
+        {/* 토스트 알림 */}
+        {(errToast.message || handoverToast.message) && (
+          <div style={{
+            position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
+            background: handoverToast.message ? C.success : '#1f2937',
+            color: '#fff', borderRadius: 10, padding: '10px 20px',
+            fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.22)', zIndex: 10,
+            animation: 'fadeInUp 0.2s ease',
+          }}>
+            {handoverToast.message || errToast.message}
+          </div>
+        )}
       </div>
       <style>{`
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeInUp { from { transform: translateX(-50%) translateY(10px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
       `}</style>
     </>
   )
