@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AiSurveyPage — AI 맞춤 질문 SSE 스트리밍 + 답변 제출 페이지 (SSE 흐름 Step 2)
  *
  * - 마운트 즉시 EventSource로 SSE 연결 → 질문 하나씩 실시간 표시
@@ -321,7 +321,7 @@ export default function AiSurveyPage() {
 
   const connectSSE = useCallback(() => {
     if (!recordId) return
-    const token = localStorage.getItem('access_token') ?? ''
+    const token = sessionStorage.getItem('access_token') ?? ''
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? ''
     const url = `${apiBase}/api/v1/surveys/${recordId}/ai-questions/stream?token=${encodeURIComponent(token)}`
 
@@ -469,7 +469,7 @@ export default function AiSurveyPage() {
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>
-            {localStorage.getItem('user_name') ?? ''}
+            {sessionStorage.getItem('user_name') ?? ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginLeft: 6 }}>
             AI 맞춤 질문 (2/2)

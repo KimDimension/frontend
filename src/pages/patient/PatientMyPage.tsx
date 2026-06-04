@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useToast } from '../../hooks/useToast'
 import { formatPhone } from '../../utils/helpers'
@@ -120,7 +120,7 @@ export default function PatientMyPage() {
   const [connectLoading, setConnectLoading] = useState(false)
   const [connectError,   setConnectError]   = useState('')
 
-  const token = () => localStorage.getItem('access_token') ?? ''
+  const token = () => sessionStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < MOBILE_BP)
@@ -132,7 +132,7 @@ export default function PatientMyPage() {
     fetch(`${API}/api/v1/auth/me/profile`, {
       headers: { Authorization: `Bearer ${token()}` },
     })
-      .then(r => { if (r.status === 401) { localStorage.clear(); navigate('/login'); return null } return r.json() })
+      .then(r => { if (r.status === 401) { sessionStorage.clear(); navigate('/login'); return null } return r.json() })
       .then(d => {
         if (!d) return
         setProfile(d)

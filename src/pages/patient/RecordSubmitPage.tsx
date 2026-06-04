@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../../hooks/useToast'
 
@@ -206,7 +206,7 @@ export default function RecordSubmitPage() {
         ← <span style={{ fontSize: 12 }}>목록</span>
       </button>
       <div style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate('/patient')}>
-        <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>{localStorage.getItem('user_name') ?? ''}</span>
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>{sessionStorage.getItem('user_name') ?? ''}</span>
         <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginLeft: 6 }}>기록 작성</span>
       </div>
       <div style={{ width: 56 }} />

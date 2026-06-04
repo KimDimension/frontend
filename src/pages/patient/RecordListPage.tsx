@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import logoFull from '../../assets/logo_full.png'
 import { useNavigate } from 'react-router-dom'
 import { getMyRecords, DailyRecordResponse } from '../../api/records'
@@ -450,7 +450,7 @@ export default function RecordListPage() {
         {/* 중앙 이름 — flex:1로 남은 공간 차지, overflow 방지 */}
         <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden', padding: '0 8px' }}>
           <span style={{ color: '#fff', fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap' }}>
-            {localStorage.getItem('user_name') ?? ''}
+            {sessionStorage.getItem('user_name') ?? ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginLeft: 4, whiteSpace: 'nowrap' }}>나의 기록</span>
         </div>
@@ -467,7 +467,7 @@ export default function RecordListPage() {
             }}
           >{isNarrow ? '👤' : '👤 마이페이지'}</button>
           <button
-            onClick={() => { localStorage.clear(); navigate('/login') }}
+            onClick={() => { sessionStorage.clear(); navigate('/login') }}
             title="로그아웃"
             style={{
               background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',

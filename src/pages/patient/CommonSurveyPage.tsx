@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CommonSurveyPage — 공통질문 답변 페이지 (SSE 흐름 Step 1)
  *
  * - 공통질문 0개: 자동으로 AiSurveyPage로 redirect
@@ -337,7 +337,7 @@ export default function CommonSurveyPage() {
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>
-            {localStorage.getItem('user_name') ?? ''}
+            {sessionStorage.getItem('user_name') ?? ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginLeft: 6 }}>
             공통 질문 (1/2)

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PatientDetailPage — 의사용 환자 상세 페이지
  * 경로: /doctor/patients/:patientId
  *
@@ -86,7 +86,7 @@ export default function PatientDetailPage() {
   const saveToast = useToast(2000)
   const [error,    setError]    = useState('')
 
-  const token = () => localStorage.getItem('access_token') ?? ''
+  const token = () => sessionStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     if (!patientId) return
