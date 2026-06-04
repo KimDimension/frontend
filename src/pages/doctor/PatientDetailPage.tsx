@@ -86,7 +86,7 @@ export default function PatientDetailPage() {
   const saveToast = useToast(2000)
   const [error,    setError]    = useState('')
 
-  const token = () => sessionStorage.getItem('access_token') ?? ''
+  const token = () => localStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     if (!patientId) return

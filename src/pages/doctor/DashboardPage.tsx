@@ -441,7 +441,7 @@ export default function DashboardPage() {
   const [error,         setError]         = useState('')
   const [hoveredRow,    setHoveredRow]    = useState<number | null>(null)
   const [currentDate,   setCurrentDate]   = useState<Date>(() => {
-    const saved = sessionStorage.getItem('dashboard_date')
+    const saved = localStorage.getItem('dashboard_date')
     if (saved) { const d = new Date(saved); if (!isNaN(d.getTime())) return d }
     return new Date()
   })
@@ -461,13 +461,13 @@ export default function DashboardPage() {
 
   /* ── 선택 날짜 데이터 fetch ── */
   const fetchData = useCallback((targetDate: Date) => {
-    const token = sessionStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
     const dp = toDateStr(targetDate)
     fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (dRes) => {
-        if (dRes.status === 401) { sessionStorage.clear(); navigate('/login'); return }
+        if (dRes.status === 401) { localStorage.clear(); navigate('/login'); return }
         if (!dRes.ok) throw new Error('서버 오류')
         const dData: DashboardStats = await dRes.json()
         setPatients(dData.patients)
@@ -483,7 +483,7 @@ export default function DashboardPage() {
   /* ── 날짜 선택 ── */
   const handleSelectDate = (d: Date) => {
     setCurrentDate(d)
-    sessionStorage.setItem('dashboard_date', d.toISOString())
+    localStorage.setItem('dashboard_date', d.toISOString())
     setStatusFilter('all')
   }
 
@@ -541,7 +541,7 @@ export default function DashboardPage() {
 
   const bulkApprove = useCallback(async () => {
     if (selectedIds.size === 0) return
-    const token = sessionStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token')
     if (!token) return
     setBulkApproving(true)
     try {

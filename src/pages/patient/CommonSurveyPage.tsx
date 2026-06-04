@@ -337,7 +337,7 @@ export default function CommonSurveyPage() {
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>
-            {sessionStorage.getItem('user_name') ?? ''}
+            {localStorage.getItem('user_name') ?? ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginLeft: 6 }}>
             공통 질문 (1/2)

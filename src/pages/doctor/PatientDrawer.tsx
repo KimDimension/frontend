@@ -187,7 +187,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [handoverHosp,      setHandoverHosp]      = useState<number | ''>('')
   const [handoverDoc,       setHandoverDoc]        = useState<number | ''>('')
   const [handoverLoading,   setHandoverLoading]    = useState(false)
-  const token = () => sessionStorage.getItem('access_token') ?? ''
+  const token = () => localStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     setLoading(true); setErr(''); setProfile(null); setTrend([])

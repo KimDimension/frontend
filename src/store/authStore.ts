@@ -20,10 +20,12 @@ const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await apiLogin(phone_number, password)
-      sessionStorage.setItem('access_token', data.access_token)
-      sessionStorage.setItem('refresh_token', data.refresh_token)
-      sessionStorage.setItem('user_name', data.name)
-      sessionStorage.setItem('user_role', data.role)
+      // 다른 role로 로그인 시 기존 세션 완전 초기화
+      localStorage.clear()
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+      localStorage.setItem('user_name', data.name)
+      localStorage.setItem('user_role', data.role)
       set({
         user: { id: data.user_id, name: data.name, role: data.role, doctor_id: null },
         isLoading: false,
@@ -43,10 +45,10 @@ const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    sessionStorage.removeItem('access_token')
-    sessionStorage.removeItem('refresh_token')
-    sessionStorage.removeItem('user_name')
-    sessionStorage.removeItem('user_role')
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user_name')
+    localStorage.removeItem('user_role')
     set({ user: null, error: null })
   },
 

@@ -29,10 +29,12 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
-// 로그인 필요 라우트 보호
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const token = sessionStorage.getItem("access_token");
+// 로그인 필요 라우트 보호 + role 검증
+function PrivateRoute({ children, role }: { children: React.ReactNode; role?: 'doctor' | 'patient' }) {
+  const token = localStorage.getItem("access_token");
+  const userRole = localStorage.getItem("user_role");
   if (!token) return <Navigate to="/login" replace />;
+  if (role && userRole !== role) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -61,64 +63,64 @@ const router = createBrowserRouter([
   // ── 의사 ──────────────────────────────────────────────────
   {
     path: "/doctor",
-    element: <PrivateRoute><DoctorLayout><DashboardPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><DashboardPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/record",
-    element: <PrivateRoute><DoctorLayout><RecordDetailPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><RecordDetailPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/patients",
-    element: <PrivateRoute><DoctorLayout><PatientListPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><PatientListPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/patients/:patientId",
-    element: <PrivateRoute><DoctorLayout><PatientDetailPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><PatientDetailPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/patients/:patientId/records",
-    element: <PrivateRoute><DoctorLayout><PatientRecordsPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><PatientRecordsPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/approve",
-    element: <PrivateRoute><DoctorLayout><PatientApprovalPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><PatientApprovalPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/common-questions",
-    element: <PrivateRoute><DoctorLayout><CommonQPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><CommonQPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/ai-questions",
-    element: <PrivateRoute><DoctorLayout><AIReviewPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><AIReviewPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/mypage",
-    element: <PrivateRoute><DoctorLayout><DoctorMyPage /></DoctorLayout></PrivateRoute>,
+    element: <PrivateRoute role="doctor"><DoctorLayout><DoctorMyPage /></DoctorLayout></PrivateRoute>,
   },
   // ── 환자 ──────────────────────────────────────────────────
   {
     path: "/patient",
-    element: <PrivateRoute><RecordListPage /></PrivateRoute>,
+    element: <PrivateRoute role="patient"><RecordListPage /></PrivateRoute>,
   },
   {
     path: "/patient/record",
-    element: <PrivateRoute><RecordSubmitPage /></PrivateRoute>,
+    element: <PrivateRoute role="patient"><RecordSubmitPage /></PrivateRoute>,
   },
   {
     path: "/patient/survey/common",
-    element: <PrivateRoute><CommonSurveyPage /></PrivateRoute>, // SSE 흐름 Step 1
+    element: <PrivateRoute role="patient"><CommonSurveyPage /></PrivateRoute>,
   },
   {
     path: "/patient/survey/ai",
-    element: <PrivateRoute><AiSurveyPage /></PrivateRoute>,     // SSE 흐름 Step 2
+    element: <PrivateRoute role="patient"><AiSurveyPage /></PrivateRoute>,
   },
   {
     path: "/patient/survey/done",
-    element: <PrivateRoute><SurveyDonePage /></PrivateRoute>,
+    element: <PrivateRoute role="patient"><SurveyDonePage /></PrivateRoute>,
   },
   {
     path: "/patient/mypage",
-    element: <PrivateRoute><PatientMyPage /></PrivateRoute>,
+    element: <PrivateRoute role="patient"><PatientMyPage /></PrivateRoute>,
   },
 ]);
 

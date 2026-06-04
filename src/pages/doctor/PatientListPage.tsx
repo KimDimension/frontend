@@ -165,12 +165,12 @@ export default function PatientListPage() {
   }, [])
 
   const fetchPatients = useCallback((sc: ScopeTab) => {
-    const token = sessionStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
     fetch(`${API}/api/v1/patients/overview?scope=${sc}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
-        if (res.status === 401) { sessionStorage.clear(); navigate('/login'); return null }
+        if (res.status === 401) { localStorage.clear(); navigate('/login'); return null }
         if (!res.ok) throw new Error('서버 오류')
         return res.json()
       })

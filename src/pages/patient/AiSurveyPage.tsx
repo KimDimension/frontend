@@ -321,7 +321,7 @@ export default function AiSurveyPage() {
 
   const connectSSE = useCallback(() => {
     if (!recordId) return
-    const token = sessionStorage.getItem('access_token') ?? ''
+    const token = localStorage.getItem('access_token') ?? ''
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? ''
     const url = `${apiBase}/api/v1/surveys/${recordId}/ai-questions/stream?token=${encodeURIComponent(token)}`
 
@@ -469,7 +469,7 @@ export default function AiSurveyPage() {
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>
-            {sessionStorage.getItem('user_name') ?? ''}
+            {localStorage.getItem('user_name') ?? ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginLeft: 6 }}>
             AI 맞춤 질문 (2/2)

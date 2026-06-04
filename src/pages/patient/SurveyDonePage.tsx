@@ -47,7 +47,7 @@ export default function SurveyDonePage() {
         </div>
 
         <p style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
-          {sessionStorage.getItem('user_name') ?? ''}님
+          {localStorage.getItem('user_name') ?? ''}님
         </p>
         <p style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 8, letterSpacing: '-0.3px' }}>
           제출 완료!
