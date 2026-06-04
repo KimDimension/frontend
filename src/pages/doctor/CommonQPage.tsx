@@ -50,8 +50,8 @@ function calcAge(birth_date: string | null): number | null {
 function patientLabel(p: PatientInfo): string {
   const age = calcAge(p.birth_date)
   const g = p.gender === 'm' ? '남' : p.gender === 'f' ? '여' : null
-  if (age !== null && g) return `${p.name}(${age}/${g})`
-  if (age !== null) return `${p.name}(${age})`
+  if (age !== null && g) return `${p.name}(만${age}세/${g})`
+  if (age !== null) return `${p.name}(만${age}세)`
   if (g) return `${p.name}(${g})`
   return p.name
 }

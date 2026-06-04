@@ -76,8 +76,8 @@ const calcAge = (b: string | null, ref?: string) => {
 const patientLabel = (name: string, birth: string | null, gender: string | null, ref?: string) => {
   const age = calcAge(birth, ref);
   const g = gender === "m" ? "남" : gender === "f" ? "여" : null;
-  if (age !== null && g) return `${name}(${age}/${g})`;
-  if (age !== null) return `${name}(${age})`;
+  if (age !== null && g) return `${name}(만${age}세/${g})`;
+  if (age !== null) return `${name}(만${age}세)`;
   if (g) return `${name}(${g})`;
   return name;
 };

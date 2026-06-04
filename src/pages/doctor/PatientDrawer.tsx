@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useToast } from '../../hooks/useToast'
 import { getHospitals, getDoctors } from '../../api/auth'
 import type { Hospital, DoctorSummary } from '../../types'
+import { formatPhone } from '../../utils/helpers'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -123,7 +124,7 @@ function Sparkline({ data, field, color, label, unit }: {
           return (
             <g key={`tick-${idx}`}>
               <line x1={xs[idx]} y1={CHART_H} x2={xs[idx]} y2={CHART_H + 3} stroke="#d1d5db" strokeWidth={0.8} />
-              <text x={xs[idx]} y={TOTAL_H - 1} textAnchor={anchor} fontSize={7.5} fill="#9ca3af">
+              <text x={xs[idx]} y={TOTAL_H - 1} textAnchor={anchor} fontSize={10} fill="#6b7280" fontWeight={500}>
                 {fmtDate(filtered[idx].date)}
               </text>
             </g>
@@ -152,7 +153,7 @@ function Sparkline({ data, field, color, label, unit }: {
               <line x1={ttX} y1={by + BOX_H + 1} x2={ttX} y2={ttY - 4} stroke={color} strokeWidth={0.8} strokeDasharray="2,2" opacity={0.55} />
               <rect x={bx} y={by} width={BOX_W} height={BOX_H} rx={4} fill="rgba(26,26,46,0.88)" />
               <text x={bx + BOX_W / 2} y={by + 11} textAnchor="middle" fontSize={9.5} fill="#fff" fontWeight="700">{valStr}</text>
-              <text x={bx + BOX_W / 2} y={by + 22} textAnchor="middle" fontSize={8} fill="rgba(200,210,230,0.9)">{dateStr}</text>
+              <text x={bx + BOX_W / 2} y={by + 22} textAnchor="middle" fontSize={11} fill="rgba(200,210,230,0.95)">{dateStr}</text>
             </g>
           )
         })()}
@@ -297,7 +298,7 @@ table{width:100%;border-collapse:collapse}th{background:#f3f4f6;padding:7px 8px;
 td{padding:6px 8px;border:1px solid #e5e7eb;font-size:11px;vertical-align:top}tr:nth-child(even) td{background:#f9fafb}
 @media print{body{margin:0}}</style></head><body>
 <h1>CAPD 일일 기록 — ${d.patient.name} 환자</h1>
-<div class="info">생년월일: ${d.patient.birth_date ?? '—'} | 성별: ${d.patient.gender ?? '—'} | 전화: ${d.patient.phone_number}<br>
+<div class="info">생년월일: ${d.patient.birth_date ?? '—'} | 성별: ${d.patient.gender ?? '—'} | 전화: ${formatPhone(d.patient.phone_number)}<br>
 병원: ${d.patient.hospital ?? '—'} | 담당의: ${d.doctor_name} | 기간: ${pdfStart || '전체'} ~ ${pdfEnd || '전체'}<br>
 내보내기: ${new Date().toLocaleString('ko-KR')}</div>
 <table><thead><tr><th>날짜</th><th>체중(kg)</th><th>혈압</th><th>제수량(mL)</th><th>혈당(mg/dL)</th><th>투석액</th><th>위험도</th><th>메모</th></tr></thead>
@@ -352,7 +353,7 @@ td{padding:6px 8px;border:1px solid #e5e7eb;font-size:11px;vertical-align:top}tr
                 </div>
                 <InfoRow label="이름"     value={profile.name} />
                 <InfoRow label="생년월일" value={profile.birth_date ? formatDate(profile.birth_date + 'T00:00:00') : null} />
-                <InfoRow label="전화번호" value={profile.phone_number} />
+                <InfoRow label="전화번호" value={formatPhone(profile.phone_number)} />
                 <InfoRow label="통원 병원" value={profile.hospital_name} />
                 <InfoRow label="담당 의사" value={profile.doctor_name} />
                 <InfoRow label="가입일"   value={profile.joined_at ? formatDate(profile.joined_at) : null} />
