@@ -308,7 +308,8 @@ function AIQuestionItem({ question, answer, disabled, onChange }: {
 export default function AiSurveyPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
-  const recordId: number | undefined = (location.state as { recordId?: number })?.recordId
+  const recordId: number | undefined = (location.state as { recordId?: number; aiReset?: boolean })?.recordId
+  const aiReset: boolean = (location.state as { aiReset?: boolean })?.aiReset === true
 
   const [questions,    setQuestions]    = useState<AIQuestion[]>([])
   const [answers,      setAnswers]      = useState<Record<number, Answer>>({})
@@ -478,6 +479,23 @@ export default function AiSurveyPage() {
       </header>
 
       <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 160px' }}>
+        {aiReset && (
+          <div style={{
+            margin: '0 0 20px', padding: '14px 16px', borderRadius: 12,
+            backgroundColor: '#fffbeb', border: '1.5px solid #fcd34d',
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+          }}>
+            <span style={{ fontSize: 20 }}>⚠️</span>
+            <div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#92400e' }}>
+                공통 질문이 수정되어 AI 질문이 새로 생성되었습니다.
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#b45309' }}>
+                아래 새 질문에 모두 답변하신 후 최종 제출해 주세요.
+              </p>
+            </div>
+          </div>
+        )}
         {!recordId ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <p style={{ color: C.danger, fontSize: 14 }}>기록 정보가 없습니다.</p>

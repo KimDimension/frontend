@@ -304,11 +304,12 @@ export default function CommonSurveyPage() {
     })
 
     try {
-      await client.post(`/api/v1/surveys/${recordId}/common`, {
+      const res = await client.post(`/api/v1/surveys/${recordId}/common`, {
         record_id: recordId,
         responses,
       })
-      navigate('/patient/survey/ai', { state: { recordId } })
+      const aiReset = res.data?.ai_reset === true
+      navigate('/patient/survey/ai', { state: { recordId, aiReset } })
     } catch {
       setError('제출에 실패했습니다. 다시 시도해 주세요.')
       setSubmitting(false)

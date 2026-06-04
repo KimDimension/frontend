@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
+import { formatPhone } from '../../utils/helpers';
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -80,8 +81,8 @@ function calcAge(birth_date: string | null, refDate?: string | null): number | n
 function patientLabel(name: string, birth_date: string | null, gender: string | null, refDate?: string | null): string {
   const age = calcAge(birth_date, refDate)
   const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
-  if (age !== null && g) return `${name}(${age}/${g})`
-  if (age !== null) return `${name}(${age})`
+  if (age !== null && g) return `${name}(만${age}세/${g})`
+  if (age !== null) return `${name}(만${age}세)`
   if (g) return `${name}(${g})`
   return name
 }
@@ -397,7 +398,7 @@ function PatientCard({
 
       {/* 2행: 전화번호 + AI질문 수 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: summary ? 6 : 0 }}>
-        <span style={{ fontSize: 12, color: C.textMuted }}>{patient.phone_number}</span>
+        <span style={{ fontSize: 12, color: C.textMuted }}>{formatPhone(patient.phone_number)}</span>
         {record && record.unreviewed_ai_count > 0 && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 3,
@@ -438,7 +439,11 @@ export default function DashboardPage() {
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState('')
   const [hoveredRow,    setHoveredRow]    = useState<number | null>(null)
-  const [currentDate,   setCurrentDate]   = useState<Date>(new Date())
+  const [currentDate,   setCurrentDate]   = useState<Date>(() => {
+    const saved = sessionStorage.getItem('dashboard_date')
+    if (saved) { const d = new Date(saved); if (!isNaN(d.getTime())) return d }
+    return new Date()
+  })
   const [searchQuery,   setSearchQuery]   = useState('')
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all')
   const [isMobile,      setIsMobile]      = useState(window.innerWidth < MOBILE_BP)
@@ -477,6 +482,7 @@ export default function DashboardPage() {
   /* ── 날짜 선택 ── */
   const handleSelectDate = (d: Date) => {
     setCurrentDate(d)
+    sessionStorage.setItem('dashboard_date', d.toISOString())
     setStatusFilter('all')
   }
 
@@ -771,7 +777,7 @@ export default function DashboardPage() {
                     #{String(p.id).padStart(4, '0')}
                   </span>
                 </td>
-                <td style={{ padding: '12px 12px', fontSize: 12, color: C.textMuted }}>{p.phone_number}</td>
+                <td style={{ padding: '12px 12px', fontSize: 12, color: C.textMuted }}>{formatPhone(p.phone_number)}</td>
                 <td style={{ padding: '12px 12px' }}>
                   {rec ? <StatusBadge status={rec.status} /> : (
                     <span style={{ background: '#f3f4f6', color: C.textMuted, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 600 }}>미제출</span>

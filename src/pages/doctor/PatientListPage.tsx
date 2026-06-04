@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
+import { formatPhone } from '../../utils/helpers';
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -45,8 +46,8 @@ function calcAge(birth_date: string | null): number | null {
 function patientLabel(name: string, birth_date: string | null, gender: string | null): string {
   const age = calcAge(birth_date)
   const g = gender === 'm' ? '남' : gender === 'f' ? '여' : null
-  if (age !== null && g) return `${name}(${age}/${g})`
-  if (age !== null) return `${name}(${age})`
+  if (age !== null && g) return `${name}(만${age}세/${g})`
+  if (age !== null) return `${name}(만${age}세)`
   if (g) return `${name}(${g})`
   return name
 }
@@ -121,7 +122,7 @@ function PatientCard({ p, query, onClick, isCurrent }: {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-        <span style={{ fontSize: 12, color: C.textMuted }}><Highlight text={p.phone_number} query={query} /></span>
+        <span style={{ fontSize: 12, color: C.textMuted }}><Highlight text={formatPhone(p.phone_number)} query={query} /></span>
         <span style={{ fontSize: 12, color: C.textMuted }}>
           {p.total_records > 0 ? <><b style={{ color: C.text }}>{p.total_records}</b>건 기록</> : '기록 없음'}
         </span>
@@ -329,7 +330,7 @@ export default function PatientListPage() {
                     >
                       <td style={{ padding: '12px 14px', fontWeight: 700 }}><span className="clickable-name" style={{ color: C.primaryDark }}><Highlight text={patientLabel(p.name, p.birth_date, p.gender)} query={query} /></span></td>
                       <td style={{ padding: '12px 14px', color: C.textMuted, fontSize: 12 }}>#{String(p.id).padStart(4, '0')}</td>
-                      <td style={{ padding: '12px 14px', color: C.textMuted }}><Highlight text={p.phone_number} query={query} /></td>
+                      <td style={{ padding: '12px 14px', color: C.textMuted }}><Highlight text={formatPhone(p.phone_number)} query={query} /></td>
                       <td style={{ padding: '12px 14px' }}>
                         {p.latest_risk_level
                           ? <span style={{ background: RISK_CFG[p.latest_risk_level].bg, color: RISK_CFG[p.latest_risk_level].color, border: `1px solid ${RISK_CFG[p.latest_risk_level].border}`, borderRadius: 6, padding: '3px 9px', fontSize: 12, fontWeight: 600 }}>{RISK_CFG[p.latest_risk_level].label}</span>

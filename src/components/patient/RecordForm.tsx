@@ -203,12 +203,7 @@ function ConcInput({
   const handleBlur = () => {
     if (value !== undefined) {
       setRaw(String(value))
-      // 권장 농도가 아닌 경우 경고 (부드러운 안내)
-      if (!VALID_CONCENTRATIONS.includes(value)) {
-        setWarn(`일반적인 CAPD 농도는 1.5 / 2.5 / 4.25 % 입니다.`)
-      } else {
-        setWarn('')
-      }
+      setWarn('')
     } else {
       setRaw('')
       setWarn('')
@@ -225,7 +220,7 @@ function ConcInput({
           type="text"
           inputMode="decimal"
           pattern="[0-9.]*"
-          placeholder="예) 1.5 / 2.5 / 4.25"
+          placeholder=""
           value={readOnly ? (value !== undefined ? String(value) : '—') : raw}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -574,6 +569,13 @@ export default function RecordForm({
             readOnly={isReadOnly}
             startAt={2000}
           />
+          {ex.infusion_weight !== undefined && (ex.infusion_weight < 100 || ex.infusion_weight > 3000) && (
+            <p style={{ margin: '-4px 0 8px', fontSize: 12, color: C.warning }}>
+              {ex.infusion_weight < 100
+                ? '⚠️ 주입량이 너무 적습니다 (권장: 100~3000g). 값을 확인해 주세요.'
+                : '⚠️ 주입량이 너무 많습니다 (권장: 100~3000g). 값을 확인해 주세요.'}
+            </p>
+          )}
 
           {/* 배액량 */}
           <Stepper
@@ -587,6 +589,17 @@ export default function RecordForm({
             unit="g"
             readOnly={isReadOnly}
           />
+          {ex.drainage_volume !== undefined && ex.drainage_volume > 4500 && (
+            <p style={{ margin: '-4px 0 8px', fontSize: 12, color: C.warning }}>
+              ⚠️ 배액량이 비정상적으로 많습니다 (최대: 4500g). 값을 확인해 주세요.
+            </p>
+          )}
+          {ex.drainage_volume !== undefined && ex.infusion_weight !== undefined &&
+           ex.drainage_volume > ex.infusion_weight + 1500 && (
+            <p style={{ margin: '-4px 0 8px', fontSize: 12, color: C.warning }}>
+              ⚠️ 배액량이 주입량보다 1500g 이상 많습니다. 측정값을 다시 확인해 주세요.
+            </p>
+          )}
 
           {/* 제수량 자동 계산 결과 */}
           <div>
@@ -709,7 +722,7 @@ export default function RecordForm({
             unit="kg"
             readOnly={isReadOnly}
             isDecimal
-            startAt={60}
+            startAt={undefined}
           />
 
           {/* 혈압 */}
