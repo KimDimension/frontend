@@ -492,7 +492,10 @@ export default function RecordDetailPage() {
           {(['S','O','A','P'] as const).map(k => (
             <div key={k} style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
               <div style={{ fontWeight: 900, fontSize: 15, color: C.primary, width: 18, flexShrink: 0 }}>{k}:</div>
-              <div style={{ fontSize: 14, color: C.text, lineHeight: 1.7, whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{detail.emr[k]}</div>
+              <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', wordBreak: 'break-word',
+                color: detail.emr[k] ? C.text : C.textLight, fontStyle: detail.emr[k] ? 'normal' : 'italic' }}>
+                {detail.emr[k] || '—'}
+              </div>
             </div>
           ))}
         </Card>
