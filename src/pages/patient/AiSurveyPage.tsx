@@ -321,7 +321,7 @@ export default function AiSurveyPage() {
 
   const connectSSE = useCallback(() => {
     if (!recordId) return
-    const token = sessionStorage.getItem('access_token') ?? ''
+    const token = localStorage.getItem('access_token') ?? ''
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? ''
     const url = `${apiBase}/api/v1/surveys/${recordId}/ai-questions/stream?token=${encodeURIComponent(token)}`
 
@@ -469,7 +469,7 @@ export default function AiSurveyPage() {
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <span style={{ color: '#fff', fontWeight: 900, fontSize: 14 }}>
-            {sessionStorage.getItem('user_name') ?? ''}
+            {localStorage.getItem('user_name') ?? ''}
           </span>
           <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginLeft: 6 }}>
             AI 맞춤 질문 (2/2)
@@ -589,4 +589,26 @@ export default function AiSurveyPage() {
             <button
               style={{
                 width: '100%', height: 52,
-                backgroundColor: (allAnswered || noQuestions) && !submitting ? C.pri
+                backgroundColor: (allAnswered || noQuestions) && !submitting ? C.primary : C.grayMid,
+                color: '#fff', border: 'none', borderRadius: 10,
+                fontSize: 15, fontWeight: 700,
+                cursor: (allAnswered || noQuestions) && !submitting ? 'pointer' : 'not-allowed',
+                boxShadow: (allAnswered || noQuestions) && !submitting ? '0 4px 12px rgba(123,107,181,0.3)' : 'none',
+              }}
+              onClick={handleSubmit}
+              disabled={(!allAnswered && !noQuestions) || sseLoading || submitting}
+            >
+              {submitting
+                ? '제출 중...'
+                : sseLoading
+                  ? '🤖 AI 질문 생성 중...'
+                  : (allAnswered || noQuestions)
+                    ? '✅ 설문 완료하기'
+                    : '모든 질문에 답변해주세요'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -35,8 +35,8 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   const location = useLocation()
   const navigate  = useNavigate()
 
-  // 실제 로그인한 의사 이름을 sessionStorage에서 읽어 "OOO 선생님" 형식으로 표시
-  const storedName = sessionStorage.getItem('user_name') ?? ''
+  // 실제 로그인한 의사 이름을 localStorage에서 읽어 "OOO 선생님" 형식으로 표시
+  const storedName = localStorage.getItem('user_name') ?? ''
   const displayName = doctorName ?? (storedName ? `${storedName} 선생님` : '선생님')
   const avatarChar = storedName ? storedName[0] : 'D'
 
@@ -54,7 +54,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   }, [])
 
   const fetchPendingCount = useCallback(async () => {
-    const token = sessionStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token')
     if (!token) return
     try {
       const res = await fetch(`${API}/api/v1/registration/doctor/pending`, {
@@ -112,7 +112,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   }
 
   const handleLogout = () => {
-    sessionStorage.clear()
+    localStorage.clear()
     navigate('/login')
   }
 
@@ -458,4 +458,3 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
     </div>
   )
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                 

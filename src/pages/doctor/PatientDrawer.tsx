@@ -187,7 +187,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [handoverHosp,      setHandoverHosp]      = useState<number | ''>('')
   const [handoverDoc,       setHandoverDoc]        = useState<number | ''>('')
   const [handoverLoading,   setHandoverLoading]    = useState(false)
-  const token = () => sessionStorage.getItem('access_token') ?? ''
+  const token = () => localStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     setLoading(true); setErr(''); setProfile(null); setTrend([])
@@ -494,4 +494,8 @@ td{padding:6px 8px;border:1px solid #e5e7eb;font-size:11px;vertical-align:top}tr
       </div>
       <style>{`
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeInUp { from { transform: translateX(-50%) translateY(10px); opacity: 0; } t
+        @keyframes fadeInUp { from { transform: translateX(-50%) translateY(10px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+      `}</style>
+    </>
+  )
+}
