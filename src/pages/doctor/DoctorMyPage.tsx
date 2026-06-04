@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useToast } from '../../hooks/useToast'
+import { formatPhone } from '../../utils/helpers'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 const MOBILE_BP = 768
@@ -87,7 +88,7 @@ export default function DoctorMyPage() {
   const saveToast = useToast(2000)
   const [formError,  setFormError]  = useState('')
 
-  const token = () => localStorage.getItem('access_token') ?? ''
+  const token = () => sessionStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < MOBILE_BP)
@@ -99,7 +100,7 @@ export default function DoctorMyPage() {
     fetch(`${API}/api/v1/auth/me/profile`, {
       headers: { Authorization: `Bearer ${token()}` },
     })
-      .then(r => { if (r.status === 401) { localStorage.clear(); navigate('/login'); return null } return r.json() })
+      .then(r => { if (r.status === 401) { sessionStorage.clear(); navigate('/login'); return null } return r.json() })
       .then(d => {
         if (d) { setProfile(d); setName(d.name); setBirth(d.birth_date ?? ''); setPhone(d.phone_number) }
       })
@@ -157,7 +158,7 @@ export default function DoctorMyPage() {
     try {
       const data = await patch(body)
       setProfile(p => p ? { ...p, name: data.name ?? name, birth_date: birth || null, phone_number: phone } : p)
-      if (data.name) localStorage.setItem('user_name', data.name)
+      if (data.name) sessionStorage.setItem('user_name', data.name)
       saveToast.show('saved')
       setEditMode(false)
     } catch (e: any) { setFormError(e.message) } finally { setSaving(false) }
@@ -180,7 +181,7 @@ export default function DoctorMyPage() {
       <InfoRow label="생년월일"  value={profile.birth_date ?? undefined} />
       <InfoRow label="자격번호"  value={profile.license_number ?? undefined} />
       <InfoRow label="소속 병원" value={profile.hospital_name ?? undefined} />
-      <InfoRow label="전화번호"  value={profile.phone_number} />
+      <InfoRow label="전화번호"  value={formatPhone(profile.phone_number)} />
     </Card>
   )
 

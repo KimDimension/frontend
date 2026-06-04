@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useToast } from '../../hooks/useToast'
 import { getHospitals, getDoctors } from '../../api/auth'
@@ -187,7 +187,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [handoverHosp,      setHandoverHosp]      = useState<number | ''>('')
   const [handoverDoc,       setHandoverDoc]        = useState<number | ''>('')
   const [handoverLoading,   setHandoverLoading]    = useState(false)
-  const token = () => localStorage.getItem('access_token') ?? ''
+  const token = () => sessionStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     setLoading(true); setErr(''); setProfile(null); setTrend([])

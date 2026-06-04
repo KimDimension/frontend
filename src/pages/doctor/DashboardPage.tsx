@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
 import { formatPhone } from '../../utils/helpers';
@@ -142,9 +142,10 @@ const RISK = {
 /* ═══════════════ 뱃지 컴포넌트 ═══════════════ */
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
+    draft:     { label: '기록 중',   bg: '#f3f4f6',      color: C.textMuted },
     submitted: { label: '미검토',   bg: C.dangerLight,  color: C.danger  },
     reviewed:  { label: '승인 완료', bg: C.successLight, color: C.success },
-    rejected:  { label: '반려',     bg: '#f3f4f6',      color: C.textMuted },
+    rejected:  { label: '반려',     bg: '#fef3f2',      color: '#b91c1c' },
   }
   const cfg = map[status] ?? { label: status, bg: '#f3f4f6', color: C.textMuted }
   return (
@@ -460,13 +461,13 @@ export default function DashboardPage() {
 
   /* ── 선택 날짜 데이터 fetch ── */
   const fetchData = useCallback((targetDate: Date) => {
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
     const dp = toDateStr(targetDate)
     fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (dRes) => {
-        if (dRes.status === 401) { localStorage.clear(); navigate('/login'); return }
+        if (dRes.status === 401) { sessionStorage.clear(); navigate('/login'); return }
         if (!dRes.ok) throw new Error('서버 오류')
         const dData: DashboardStats = await dRes.json()
         setPatients(dData.patients)
@@ -540,7 +541,7 @@ export default function DashboardPage() {
 
   const bulkApprove = useCallback(async () => {
     if (selectedIds.size === 0) return
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     if (!token) return
     setBulkApproving(true)
     try {

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useToast } from '../../hooks/useToast'
+import { formatPhone } from '../../utils/helpers'
 import {
   getHospitals, getDoctors,
   patientConnectRequest, getMyPendingRequest, cancelMyRequest, patientDischargeRequest,
@@ -119,7 +120,7 @@ export default function PatientMyPage() {
   const [connectLoading, setConnectLoading] = useState(false)
   const [connectError,   setConnectError]   = useState('')
 
-  const token = () => localStorage.getItem('access_token') ?? ''
+  const token = () => sessionStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < MOBILE_BP)
@@ -131,7 +132,7 @@ export default function PatientMyPage() {
     fetch(`${API}/api/v1/auth/me/profile`, {
       headers: { Authorization: `Bearer ${token()}` },
     })
-      .then(r => { if (r.status === 401) { localStorage.clear(); navigate('/login'); return null } return r.json() })
+      .then(r => { if (r.status === 401) { sessionStorage.clear(); navigate('/login'); return null } return r.json() })
       .then(d => {
         if (!d) return
         setProfile(d)
@@ -256,9 +257,9 @@ export default function PatientMyPage() {
         <div style={{ fontWeight: 800, fontSize: 16, color: C.text }}>{profile.name}</div>
         <div style={{ fontSize: 12, color: C.textMuted, marginTop: 3 }}>
           CAPD 환자
-          {(age !== null || genderLabel) && (
+          {age !== null && (
             <span style={{ marginLeft: 6, color: C.primary, fontWeight: 700 }}>
-              {[age, genderLabel ? (profile.gender === 'm' ? '남' : '여') : null].filter(v => v !== null).join('/')}
+              만{age}세
             </span>
           )}
         </div>
@@ -267,7 +268,7 @@ export default function PatientMyPage() {
       <InfoRow label="생년월일"  value={profile.birth_date ?? undefined} />
       <InfoRow label="성별"     value={genderLabel ?? undefined} />
       <InfoRow label="통원 병원" value={profile.hospital_name ?? undefined} />
-      <InfoRow label="전화번호"  value={profile.phone_number} />
+      <InfoRow label="전화번호"  value={formatPhone(profile.phone_number)} />
       <InfoRow label="거주지"    value={profile.address ?? undefined} />
     </Card>
   )
@@ -370,7 +371,7 @@ export default function PatientMyPage() {
                 )}
                 {profile.doctor_phone && (
                   <div style={{ fontSize: 12, color: C.textMuted }}>
-                    📞 {profile.doctor_phone}
+                    📞 {formatPhone(profile.doctor_phone)}
                   </div>
                 )}
               </div>

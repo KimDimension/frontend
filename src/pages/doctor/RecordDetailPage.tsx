@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useToast } from "../../hooks/useToast";
 
@@ -330,13 +330,13 @@ export default function RecordDetailPage() {
 
   useEffect(() => {
     if (!recordId) return
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
     fetch(`${API}/api/v1/records/${recordId}/detail`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
-        if (res.status === 401) { localStorage.clear(); navigate('/login'); return null }
+        if (res.status === 401) { sessionStorage.clear(); navigate('/login'); return null }
         if (!res.ok) throw new Error('서버 오류')
         return res.json()
       })
@@ -347,7 +347,7 @@ export default function RecordDetailPage() {
 
   const handleApprove = async () => {
     if (!recordId || approving) return
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     setApproving(true)
     try {
       const res = await fetch(`${API}/api/v1/records/${recordId}/approve`, {
@@ -362,7 +362,7 @@ export default function RecordDetailPage() {
   const handleRevert = async () => {
     if (!recordId || reverting) return
     if (!window.confirm('승인을 취소하고 검토 중 상태로 되돌릴까요?')) return
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     setReverting(true)
     try {
       const res = await fetch(`${API}/api/v1/records/${recordId}/revert`, {

@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
@@ -31,7 +31,7 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 
 // 로그인 필요 라우트 보호
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem("access_token");
+  const token = sessionStorage.getItem("access_token");
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
