@@ -461,13 +461,13 @@ export default function DashboardPage() {
 
   /* ── 선택 날짜 데이터 fetch ── */
   const fetchData = useCallback((targetDate: Date) => {
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
     const dp = toDateStr(targetDate)
     fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (dRes) => {
-        if (dRes.status === 401) { localStorage.clear(); navigate('/login'); return }
+        if (dRes.status === 401) { sessionStorage.clear(); navigate('/login'); return }
         if (!dRes.ok) throw new Error('서버 오류')
         const dData: DashboardStats = await dRes.json()
         setPatients(dData.patients)
@@ -541,7 +541,7 @@ export default function DashboardPage() {
 
   const bulkApprove = useCallback(async () => {
     if (selectedIds.size === 0) return
-    const token = localStorage.getItem('access_token')
+    const token = sessionStorage.getItem('access_token')
     if (!token) return
     setBulkApproving(true)
     try {
@@ -898,14 +898,4 @@ export default function DashboardPage() {
           >
             취소
           </button>
-        </div>
-      )}
-
-      <style>{`
-        .clickable-name { display: inline-block; cursor: pointer; transition: color 0.12s; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
-        .clickable-name:hover { color: var(--capd-primary); text-decoration: underline; }
-        .clickable-name:active { color: var(--capd-primary-dark); transform: scale(0.97); }
-      `}</style>
-    </main>
-  )
-}
+       

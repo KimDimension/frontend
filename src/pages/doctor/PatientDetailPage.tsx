@@ -86,7 +86,7 @@ export default function PatientDetailPage() {
   const saveToast = useToast(2000)
   const [error,    setError]    = useState('')
 
-  const token = () => localStorage.getItem('access_token') ?? ''
+  const token = () => sessionStorage.getItem('access_token') ?? ''
 
   useEffect(() => {
     if (!patientId) return
@@ -236,10 +236,4 @@ export default function PatientDetailPage() {
             resize: 'vertical', outline: 'none',
             background: '#fafafa', lineHeight: 1.7,
             boxSizing: 'border-box',
-            transition: 'border-color 0.15s',
-          }}
-        />
-      </div>
-    </div>
-  )
-}
+            transition: 'border

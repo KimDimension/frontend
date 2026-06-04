@@ -8,7 +8,7 @@ const client = axios.create({
 
 // 요청 인터셉터: JWT 토큰 자동 첨부
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = localStorage.getItem('access_token')
+  const token = sessionStorage.getItem('access_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -25,7 +25,7 @@ function processQueue(newToken: string) {
 }
 
 function forceLogout() {
-  // authStore.logout()이 localStorage 정리 + Zustand 상태 초기화를 함께 처리
+  // authStore.logout()이 sessionStorage 정리 + Zustand 상태 초기화를 함께 처리
   useAuthStore.getState().logout()
   window.location.href = '/login'
 }
@@ -40,7 +40,7 @@ client.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const refreshToken = localStorage.getItem('refresh_token')
+    const refreshToken = sessionStorage.getItem('refresh_token')
     if (!refreshToken) {
       forceLogout()
       return Promise.reject(error)
@@ -67,10 +67,10 @@ client.interceptors.response.use(
         { refresh_token: refreshToken },
       )
       const newAccessToken: string = data.access_token
-      localStorage.setItem('access_token', newAccessToken)
+      sessionStorage.setItem('access_token', newAccessToken)
       // 토큰 회전: 백엔드가 새 refresh token을 함께 반환하므로 갱신
       if (data.refresh_token) {
-        localStorage.setItem('refresh_token', data.refresh_token)
+        sessionStorage.setItem('refresh_token', data.refresh_token)
       }
       processQueue(newAccessToken)
       axiosError.config!.headers.Authorization = `Bearer ${newAccessToken}`
