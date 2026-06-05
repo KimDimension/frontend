@@ -70,6 +70,8 @@ input,
 textarea,
 select {
   font-family: inherit;
+  /* iOS에서 font-size < 16px 입력창 포커스 시 자동 줌인 방지 */
+  font-size: 16px !important;
 }
 
 /* ── 공통 입력 포커스 스타일 (onFocus/onBlur DOM 조작 대체) ── */

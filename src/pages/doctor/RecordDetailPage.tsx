@@ -386,6 +386,7 @@ export default function RecordDetailPage() {
   if (!detail) return null
 
   const isApproved = detail.status === 'reviewed'
+  const isDraft = detail.status === 'draft'
   const submitTime = new Date(detail.submitted_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
 
   const vitals = [
@@ -417,7 +418,11 @@ export default function RecordDetailPage() {
           <p style={{ margin: 0, fontSize: 12, color: C.textMuted, marginTop: 2 }}>제출 시간: {submitTime}</p>
         </div>
         <div style={{ marginLeft: 'auto' }}>
-          {isApproved ? (
+          {isDraft ? (
+            <span style={{ background: '#f3f4f6', color: C.textMuted, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700 }}>
+              📝 기록 중
+            </span>
+          ) : isApproved ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{
                 background: C.successLight, color: C.success,
@@ -484,28 +489,36 @@ export default function RecordDetailPage() {
         )}
       </div>
 
-      {/* EMR + AI 요약 (모바일: 단일 컬럼) */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        {/* EMR */}
-        <Card style={{ padding: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: 15, color: C.text, marginBottom: 14 }}>📄 EMR 형식 요약</div>
-          {(['S','O','A','P'] as const).map(k => (
-            <div key={k} style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-              <div style={{ fontWeight: 900, fontSize: 15, color: C.primary, width: 18, flexShrink: 0 }}>{k}:</div>
-              <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', wordBreak: 'break-word',
-                color: detail.emr[k] ? C.text : C.textLight, fontStyle: detail.emr[k] ? 'normal' : 'italic' }}>
-                {detail.emr[k] || '—'}
-              </div>
-            </div>
-          ))}
+      {/* EMR + AI 요약 — draft 기록은 미표시 */}
+      {isDraft ? (
+        <Card style={{ padding: 20, marginBottom: 20, textAlign: 'center' }}>
+          <p style={{ margin: 0, fontSize: 14, color: C.textMuted }}>
+            📝 환자가 아직 기록을 제출하지 않았습니다. 제출 후 AI 분석 결과가 표시됩니다.
+          </p>
         </Card>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
+          {/* EMR */}
+          <Card style={{ padding: 20 }}>
+            <div style={{ fontWeight: 800, fontSize: 15, color: C.text, marginBottom: 14 }}>📄 EMR 형식 요약</div>
+            {(['S','O','A','P'] as const).map(k => (
+              <div key={k} style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                <div style={{ fontWeight: 900, fontSize: 15, color: C.primary, width: 18, flexShrink: 0 }}>{k}:</div>
+                <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line', wordBreak: 'break-word',
+                  color: detail.emr[k] ? C.text : C.textLight, fontStyle: detail.emr[k] ? 'normal' : 'italic' }}>
+                  {detail.emr[k] || '—'}
+                </div>
+              </div>
+            ))}
+          </Card>
 
-        {/* AI 요약 */}
-        <AiSummaryCard
-          raw={detail.ai_summary}
-          patientLabel={patientLabel(detail.patient_name, detail.record_date)}
-        />
-      </div>
+          {/* AI 요약 */}
+          <AiSummaryCard
+            raw={detail.ai_summary}
+            patientLabel={patientLabel(detail.patient_name, detail.record_date)}
+          />
+        </div>
+      )}
 
       {/* 공통 질문 응답 */}
       <Card style={{ padding: 20, marginBottom: 20 }}>
