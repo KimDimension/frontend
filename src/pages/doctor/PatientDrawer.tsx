@@ -351,7 +351,7 @@ tr:nth-child(even) td{background:#f9fafb}
 <h1>CAPD 일일 기록 요약지</h1>
 <div class="subtitle">${d.patient.name} 환자</div>
 <div class="info">
-  생년월일: ${d.patient.birth_date ?? '—'} &nbsp;|&nbsp; 성별: ${d.patient.gender ?? '—'} &nbsp;|&nbsp; 전화: ${d.patient.phone_number}<br>
+  생년월일: ${d.patient.birth_date ?? '—'} &nbsp;|&nbsp; 성별: ${d.patient.gender ?? '—'} &nbsp;|&nbsp; 연락처: ${formatPhone(d.patient.phone_number)}<br>
   병원: ${d.patient.hospital ?? '—'} &nbsp;|&nbsp; 담당의: ${d.doctor_name}<br>
   조회 기간: ${pdfStart || '전체'} ~ ${pdfEnd || '전체'} &nbsp;|&nbsp; 기록 수: ${d.records.length}건
 </div>
