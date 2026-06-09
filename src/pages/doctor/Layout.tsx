@@ -163,40 +163,37 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
           zIndex: 100,
         }}>
           {/* 로고 + 토글 버튼 */}
-          <div style={{
-            padding: open ? '20px 16px 16px' : '20px 0 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: open ? 'space-between' : 'center',
-            borderBottom: `1px solid ${C.border}`,
-          }}>
-            {open && (
-              <div
-                onClick={() => navigate('/doctor')}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-              >
+          {open ? (
+            <div style={{
+              padding: '20px 16px 16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderBottom: `1px solid ${C.border}`,
+            }}>
+              <div onClick={() => navigate('/doctor')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <img src={logoFull} alt="CAPD" style={{ height: 28, objectFit: 'contain' }} />
               </div>
-            )}
-            <button
-              onClick={() => {
-                const next = !open
-                desktopCollapsedRef.current = !next
-                setOpen(next)
-              }}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '4px 8px', borderRadius: 6,
-                color: C.textMuted, fontSize: 14, lineHeight: 1,
-                flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: open ? 'auto' : 40, height: open ? 'auto' : 32,
-              }}
-              title={open ? '접기' : '펼치기'}
-            >
-              {open ? '◀' : '▶'}
-            </button>
-          </div>
+              <button
+                onClick={() => { desktopCollapsedRef.current = true; setOpen(false) }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: 6, color: C.textMuted, fontSize: 14, lineHeight: 1 }}
+                title="접기"
+              >◀</button>
+            </div>
+          ) : (
+            <div style={{
+              padding: '14px 0 10px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              borderBottom: `1px solid ${C.border}`,
+            }}>
+              <div onClick={() => navigate('/doctor')} style={{ cursor: 'pointer' }}>
+                <img src={logoFull} alt="CAPD" style={{ height: 22, objectFit: 'contain' }} />
+              </div>
+              <button
+                onClick={() => { desktopCollapsedRef.current = false; setOpen(true) }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 6, color: C.textMuted, fontSize: 14, lineHeight: 1 }}
+                title="펼치기"
+              >▶</button>
+            </div>
+          )}
 
           {/* 의사 프로필 (펼쳐진 상태에서만) */}
           {open && (
