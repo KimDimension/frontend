@@ -1,5 +1,6 @@
 ﻿import React from "react";
 import { createBrowserRouter, Navigate } from "react-router";
+import useAuthStore, { getStoredToken } from "../store/authStore";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import DoctorRegisterPage from "../pages/auth/DoctorRegisterPage";
@@ -29,10 +30,28 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
+// 로딩 스피너 (hydration 대기용)
+function AuthLoading() {
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--capd-bg)', fontFamily: "'Noto Sans KR', sans-serif",
+    }}>
+      <div style={{ textAlign: 'center', color: 'var(--capd-primary)' }}>
+        <div style={{ fontSize: 28, marginBottom: 10 }}>⏳</div>
+        <div style={{ fontSize: 14, color: '#6b7280' }}>세션 확인 중...</div>
+      </div>
+    </div>
+  )
+}
+
 // 로그인 필요 라우트 보호 + role 검증
 function PrivateRoute({ children, role }: { children: React.ReactNode; role?: 'doctor' | 'patient' }) {
-  const token = localStorage.getItem("access_token");
-  const userRole = localStorage.getItem("user_role");
+  const isHydrated = useAuthStore(s => s.isHydrated)
+  if (!isHydrated) return <AuthLoading />
+
+  const token = getStoredToken("access_token")
+  const userRole = getStoredToken("user_role")
   if (!token) return <Navigate to="/login" replace />;
   if (role && userRole !== role) return <Navigate to="/login" replace />;
   return <>{children}</>;
@@ -100,29 +119,4 @@ const router = createBrowserRouter([
   // ── 환자 ──────────────────────────────────────────────────
   {
     path: "/patient",
-    element: <PrivateRoute role="patient"><RecordListPage /></PrivateRoute>,
-  },
-  {
-    path: "/patient/record",
-    element: <PrivateRoute role="patient"><RecordSubmitPage /></PrivateRoute>,
-  },
-  {
-    path: "/patient/survey/common",
-    element: <PrivateRoute role="patient"><CommonSurveyPage /></PrivateRoute>,
-  },
-  {
-    path: "/patient/survey/ai",
-    element: <PrivateRoute role="patient"><AiSurveyPage /></PrivateRoute>,
-  },
-  {
-    path: "/patient/survey/done",
-    element: <PrivateRoute role="patient"><SurveyDonePage /></PrivateRoute>,
-  },
-  {
-    path: "/patient/mypage",
-    element: <PrivateRoute role="patient"><PatientMyPage /></PrivateRoute>,
-  },
-]);
-
-
-export default router;
+    element: <PrivateRoute role="

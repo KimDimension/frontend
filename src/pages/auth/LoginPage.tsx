@@ -17,13 +17,14 @@ const C = {
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login, isLoading, error } = useAuthStore()
-  const [phone,    setPhone]    = useState('')
-  const [password, setPassword] = useState('')
+  const [phone,     setPhone]     = useState('')
+  const [password,  setPassword]  = useState('')
+  const [autoLogin, setAutoLogin] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const role = await login(phone, password)
+      const role = await login(phone, password, autoLogin)
       if (role === 'doctor') navigate('/doctor')
       else navigate('/patient')
     } catch { /* 에러는 store에서 처리 */ }
@@ -56,6 +57,25 @@ export default function LoginPage() {
             value={phone} onChange={e => setPhone(e.target.value)} />
           <Field label="비밀번호" type="password" placeholder="비밀번호를 입력하세요"
             value={password} onChange={e => setPassword(e.target.value)} />
+
+          {/* 자동로그인 체크박스 */}
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            cursor: 'pointer', userSelect: 'none',
+            fontSize: 13, color: C.textMuted,
+          }}>
+            <input
+              type="checkbox"
+              checked={autoLogin}
+              onChange={e => setAutoLogin(e.target.checked)}
+              style={{
+                width: 16, height: 16,
+                accentColor: C.primary,
+                cursor: 'pointer',
+              }}
+            />
+            자동 로그인
+          </label>
 
           {error && (
             <p style={{ margin: 0, fontSize: 13, color: '#dc2626', textAlign: 'center' }}>{error}</p>
@@ -116,17 +136,4 @@ function Field({ label, type, placeholder, value, onChange }: {
   const [focused, setFocused] = useState(false)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <label style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{label}</label>
-      <input
-        type={type ?? 'text'} placeholder={placeholder} value={value} onChange={onChange}
-        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        style={{
-          padding: '11px 14px', borderRadius: 10,
-          border: `1.5px solid ${focused ? 'var(--capd-primary)' : 'var(--capd-border)'}`,
-          fontSize: 14, fontFamily: 'inherit', color: '#1a1a2e',
-          background: '#fff', outline: 'none', transition: 'border-color 0.15s',
-        }}
-      />
-    </div>
-  )
-}
+      <label style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2
