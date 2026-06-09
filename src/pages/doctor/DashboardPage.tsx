@@ -792,8 +792,8 @@ export default function DashboardPage() {
         <div style={{ fontSize: isMobile ? 12 : 13, color: C.textMuted, marginTop: 3 }}>{formatDateKo(currentDate)}</div>
       </div>
 
-      {/* 모바일: 달력 맨 위 */}
-      {isMobile && (
+      {/* 모바일 or 중간 너비: 달력 맨 위 */}
+      {(isMobile || isNarrow) && (
         <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', marginBottom: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
           <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
         </div>
