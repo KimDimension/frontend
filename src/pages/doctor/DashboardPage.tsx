@@ -319,7 +319,8 @@ function sortedPatientList(patients: PatientInfo[], recordMap: Map<number, Today
   })
 }
 
-const MOBILE_BP = 768
+const MOBILE_BP  = 768
+const MEDIUM_BP  = 1100   // 달력 패널 숨기는 기준
 
 /* ═══════════════ 환자 카드 (모바일용) ═══════════════ */
 function PatientCard({
@@ -431,13 +432,17 @@ export default function DashboardPage() {
   const [searchQuery,   setSearchQuery]   = useState('')
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all')
   const [isMobile,      setIsMobile]      = useState(window.innerWidth < MOBILE_BP)
+  const [isNarrow,      setIsNarrow]      = useState(window.innerWidth < MEDIUM_BP)
   const [selectedIds,     setSelectedIds]     = useState<Set<number>>(new Set())
   const [bulkApproving,   setBulkApproving]   = useState(false)
   const [drawerPatientId, setDrawerPatientId] = useState<number | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BP)
+    const onResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_BP)
+      setIsNarrow(window.innerWidth < MEDIUM_BP)
+    }
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -685,14 +690,15 @@ export default function DashboardPage() {
   ) : (
     /* ── 테이블 ── */
     <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: '3%'  }} />
+          <col style={{ width: 36  }} />
+          <col style={{ width: '28%' }} />
+          <col style={{ width: '13%' }} />
           <col style={{ width: '22%' }} />
-          <col style={{ width: '12%' }} />
-          <col style={{ width: '23%' }} />
-          <col style={{ width: '20%' }} />
-          <col style={{ width: '20%' }} />
+          <col style={{ width: '18%' }} />
+          <col style={{ width: '19%' }} />
         </colgroup>
         <thead>
           <tr style={{ background: C.bg }}>
@@ -750,29 +756,30 @@ export default function DashboardPage() {
                     />
                   )}
                 </td>
-                <td style={{ padding: '12px 12px', fontWeight: 700, fontSize: 14 }}
+                <td style={{ padding: '12px 12px', fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                   onClick={e => { e.stopPropagation(); setDrawerPatientId(p.id) }}>
                   <span className="clickable-name" style={{ color: C.primaryDark }}>
                     <Highlight text={patientLabel(p.name, p.birth_date, p.gender, toDateStr(currentDate))} query={searchQuery} />
                   </span>
                 </td>
                 <td style={{ padding: '12px 12px' }}>
-                  <span style={{ fontSize: 11, background: C.bg, color: C.textMuted, borderRadius: 5, padding: '2px 7px', fontWeight: 600 }}>
+                  <span style={{ fontSize: 11, background: C.bg, color: C.textMuted, borderRadius: 5, padding: '2px 7px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     #{String(p.id).padStart(4, '0')}
                   </span>
                 </td>
-                <td style={{ padding: '12px 12px', fontSize: 12, color: C.textMuted }}>{formatPhone(p.phone_number)}</td>
-                <td style={{ padding: '12px 12px' }}>
+                <td style={{ padding: '12px 12px', fontSize: 12, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatPhone(p.phone_number)}</td>
+                <td style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>
                   {rec ? <StatusBadge status={rec.status} /> : (
                     <span style={{ background: '#f3f4f6', color: C.textMuted, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 600 }}>미제출</span>
                   )}
                 </td>
-                <td style={{ padding: '12px 12px' }}><RiskBadge level={rec?.risk_level ?? null} /></td>
+                <td style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}><RiskBadge level={rec?.risk_level ?? null} /></td>
               </tr>
             )
           })}
         </tbody>
       </table>
+      </div>
     </div>
   )
 
@@ -830,8 +837,8 @@ export default function DashboardPage() {
           {PatientList}
         </div>
 
-        {/* 오른쪽: 달력 sticky (데스크톱만) */}
-        {!isMobile && (
+        {/* 오른쪽: 달력 sticky (데스크톱 + 충분한 너비일 때만) */}
+        {!isMobile && !isNarrow && (
           <div style={{ flexShrink: 0, width: 300, position: 'sticky', top: 20 }}>
             <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
