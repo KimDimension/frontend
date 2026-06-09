@@ -31,7 +31,7 @@ function parseJwtUserId(token: string): number {
 }
 
 function clearAllTokens() {
-  ['access_token', 'refresh_token', 'user_name', 'user_role', 'session_only'].forEach(k =>
+  ['access_token', 'refresh_token', 'user_name', 'user_role', 'user_doctor_id', 'session_only'].forEach(k =>
     localStorage.removeItem(k),
   )
   sessionStorage.removeItem('session_active')
@@ -75,8 +75,10 @@ const useAuthStore = create<AuthState>((set) => ({
       const name = localStorage.getItem('user_name') ?? ''
       const role = localStorage.getItem('user_role') as UserRole | null
       const userId = parseJwtUserId(data.access_token)
+      const savedDoctorId = localStorage.getItem('user_doctor_id')
+      const doctorId = savedDoctorId ? parseInt(savedDoctorId, 10) : null
       set({
-        user: role ? { id: userId, name, role, doctor_id: null } : null,
+        user: role ? { id: userId, name, role, doctor_id: doctorId } : null,
         isHydrated: true,
       })
     } catch {
@@ -94,10 +96,13 @@ const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('refresh_token', data.refresh_token)
       localStorage.setItem('user_name', data.name)
       localStorage.setItem('user_role', data.role)
+      if (data.doctor_id != null) {
+        localStorage.setItem('user_doctor_id', String(data.doctor_id))
+      }
       if (!autoLogin) localStorage.setItem('session_only', 'true')
       sessionStorage.setItem('session_active', 'true')
       set({
-        user: { id: data.user_id, name: data.name, role: data.role, doctor_id: null },
+        user: { id: data.user_id, name: data.name, role: data.role, doctor_id: data.doctor_id ?? null },
         isLoading: false,
       })
       return data.role
