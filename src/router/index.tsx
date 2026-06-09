@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { createBrowserRouter, Navigate } from "react-router";
-import useAuthStore, { getStoredToken } from "../store/authStore";
+import useAuthStore from "../store/authStore";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import DoctorRegisterPage from "../pages/auth/DoctorRegisterPage";
@@ -50,8 +50,8 @@ function PrivateRoute({ children, role }: { children: React.ReactNode; role?: 'd
   const isHydrated = useAuthStore(s => s.isHydrated)
   if (!isHydrated) return <AuthLoading />
 
-  const token = getStoredToken("access_token")
-  const userRole = getStoredToken("user_role")
+  const token = localStorage.getItem("access_token")
+  const userRole = localStorage.getItem("user_role")
   if (!token) return <Navigate to="/login" replace />;
   if (role && userRole !== role) return <Navigate to="/login" replace />;
   return <>{children}</>;

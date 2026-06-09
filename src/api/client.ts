@@ -1,14 +1,14 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
-import useAuthStore, { getStoredToken } from '../store/authStore'
+import useAuthStore from '../store/authStore'
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
   headers: { 'Content-Type': 'application/json' },
 })
 
-// 요청 인터셉터: JWT 토큰 자동 첨부 (localStorage → sessionStorage 순으로 확인)
+// 요청 인터셉터: JWT 토큰 자동 첨부
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getStoredToken('access_token')
+  const token = localStorage.getItem('access_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -43,7 +43,7 @@ client.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const refreshToken = getStoredToken('refresh_token')
+    const refreshToken = localStorage.getItem('refresh_token')
     if (!refreshToken) {
       forceLogout()
       return Promise.reject(error)
@@ -73,11 +73,8 @@ client.interceptors.response.use(
         { refresh_token: refreshToken },
       )
       const newAccessToken: string = data.access_token
-      // 자동로그인 여부에 따라 같은 위치에 저장
-      const isAutoLogin = localStorage.getItem('auto_login') === 'true'
-      const storage = isAutoLogin ? localStorage : sessionStorage
-      storage.setItem('access_token', newAccessToken)
-      if (data.refresh_token) storage.setItem('refresh_token', data.refresh_token)
+      localStorage.setItem('access_token', newAccessToken)
+      if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token)
       processQueue(newAccessToken)
       axiosError.config!.headers.Authorization = `Bearer ${newAccessToken}`
       return client(axiosError.config!)
