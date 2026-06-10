@@ -12,6 +12,10 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useToast } from '../../hooks/useToast'
 import { formatPhone, calcAge, patientLabel } from '../../utils/helpers'
+import { apiFetch } from '../../api/apiFetch'
+import { Sparkline, type TrendPoint } from '../../components/doctor/Sparkline'
+import { PatientManageActions } from '../../components/doctor/PatientManageActions'
+import { openRecordsExportPdf } from '../../utils/exportRecordsPdf'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
@@ -30,16 +34,17 @@ const C = {
 }
 
 interface PatientProfile {
-  id:            number
-  name:          string
-  phone_number:  string
-  birth_date:    string | null
-  hospital_name: string | null
-  doctor_name:   string | null
-  self_memo:     string | null
-  joined_at:     string | null
-  gender:        string | null
-  address:       string | null
+  id:                  number
+  name:                string
+  phone_number:        string
+  birth_date:          string | null
+  hospital_name:       string | null
+  doctor_name:         string | null
+  self_memo:           string | null
+  joined_at:           string | null
+  gender:              string | null
+  address:             string | null
+  is_current_patient?: boolean
 }
 
 
@@ -68,7 +73,12 @@ export default function PatientDetailPage() {
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
   const saveToast = useToast(2000)
+  const errToast  = useToast(3000)
   const [error,    setError]    = useState('')
+  const [trend,    setTrend]    = useState<TrendPoint[]>([])
+  const [showPdf,  setShowPdf]  = useState(false)
+  const [pdfStart, setPdfStart] = useState('')
+  const [pdfEnd,   setPdfEnd]   = useState('')
 
   const token = () => localStorage.getItem('access_token') ?? ''
 
@@ -79,18 +89,22 @@ export default function PatientDetailPage() {
 
     setLoading(true)
     Promise.all([
-      fetch(`${API}/api/v1/patients/${patientId}/profile`, {
+      apiFetch(`${API}/api/v1/patients/${patientId}/profile`, {
         headers: { Authorization: `Bearer ${t}` },
       }).then(r => { if (!r.ok) throw new Error('프로필 오류'); return r.json() }),
-      fetch(`${API}/api/v1/patients/${patientId}/note`, {
+      apiFetch(`${API}/api/v1/patients/${patientId}/note`, {
         headers: { Authorization: `Bearer ${t}` },
       }).then(r => { if (!r.ok) throw new Error('메모 오류'); return r.json() }),
+      apiFetch(`${API}/api/v1/patients/${patientId}/trend?days=14`, {
+        headers: { Authorization: `Bearer ${t}` },
+      }).then(r => r.ok ? r.json() : []),
     ])
-      .then(([profileData, noteData]) => {
+      .then(([profileData, noteData, trendData]) => {
         setProfile(profileData)
         const c = noteData.content ?? ''
         setNote(c)
         setOrigNote(c)
+        setTrend(Array.isArray(trendData) ? trendData : [])
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -100,7 +114,7 @@ export default function PatientDetailPage() {
     if (!patientId) return
     setSaving(true)
     try {
-      const res = await fetch(`${API}/api/v1/patients/${patientId}/note`, {
+      const res = await apiFetch(`${API}/api/v1/patients/${patientId}/note`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: note }),
@@ -158,16 +172,52 @@ export default function PatientDetailPage() {
 
       {/* 기본 정보 카드 */}
       <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-        <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>기본 정보</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>기본 정보</h2>
+          <button
+            onClick={() => setShowPdf(v => !v)}
+            style={{ background: showPdf ? C.primary : '#f3f4f6', color: showPdf ? '#fff' : C.textMuted, border: 'none', borderRadius: 7, padding: '6px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}
+          >
+            📄 PDF
+          </button>
+        </div>
         <InfoRow label="이름"     value={profile.name} />
         <InfoRow label="생년월일"  value={profile.birth_date ? formatDate(profile.birth_date + 'T00:00:00') : null} />
         <InfoRow label="성별"     value={profile.gender === 'm' ? '남성' : profile.gender === 'f' ? '여성' : undefined} />
         <InfoRow label="거주지"    value={profile.address ?? undefined} />
         <InfoRow label="전화번호"  value={formatPhone(profile.phone_number)} />
-        <InfoRow label="소속 병원" value={profile.hospital_name} />
+        <InfoRow label="통원 병원" value={profile.hospital_name} />
         <InfoRow label="담당 의사" value={profile.doctor_name} />
         <InfoRow label="가입일"    value={profile.joined_at ? formatDate(profile.joined_at) : null} />
+        {showPdf && (
+          <div style={{ marginTop: 14, padding: '14px', background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>기록 기간 선택</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="date" value={pdfStart} onChange={e => setPdfStart(e.target.value)}
+                style={{ flex: 1, minWidth: 140, padding: '7px 10px', borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: 'inherit', color: C.text, outline: 'none' }} />
+              <span style={{ fontSize: 12, color: C.textMuted }}>~</span>
+              <input type="date" value={pdfEnd} onChange={e => setPdfEnd(e.target.value)}
+                style={{ flex: 1, minWidth: 140, padding: '7px 10px', borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: 'inherit', color: C.text, outline: 'none' }} />
+            </div>
+            <button onClick={() => openRecordsExportPdf(patientId!, pdfStart, pdfEnd, (m) => errToast.show(m))}
+              style={{ marginTop: 10, width: '100%', background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              📄 PDF 내보내기
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* 최근 추이 */}
+      {trend.length >= 2 && (
+        <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>
+            최근 추이
+            <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: C.textMuted }}>최근 14일</span>
+          </h2>
+          <Sparkline data={trend} field="weight" color={C.primary} label="체중" unit="kg" />
+          <Sparkline data={trend} field="total_ultrafiltration" color={C.success} label="제수량" unit="mL" />
+        </div>
+      )}
 
       {/* 환자 본인 메모 */}
       <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '20px 24px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
@@ -224,6 +274,29 @@ export default function PatientDetailPage() {
           }}
         />
       </div>
+
+      {/* 인수인계 · 담당 해제 (현재 담당 환자만) */}
+      {profile.is_current_patient && (
+        <div style={{ marginTop: 16 }}>
+          <PatientManageActions
+            patientId={patientId!}
+            patientName={profile.name}
+            isCurrentPatient={!!profile.is_current_patient}
+            onDone={() => navigate('/doctor/patients')}
+          />
+        </div>
+      )}
+
+      {errToast.message && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#1f2937', color: '#fff', borderRadius: 10, padding: '10px 20px',
+          fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.22)', zIndex: 1000,
+        }}>
+          {errToast.message}
+        </div>
+      )}
     </div>
   )
 }

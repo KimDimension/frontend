@@ -22,14 +22,6 @@ import SurveyDonePage from "../pages/patient/SurveyDonePage";
 import PatientMyPage from "../pages/patient/PatientMyPage";
 import DoctorMyPage from "../pages/doctor/DoctorMyPage";
 
-// 준비 중 placeholder
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div style={{ padding: "2rem", textAlign: "center", fontFamily: "'Pretendard', 'Noto Sans KR', sans-serif" }}>
-    <h2>{title}</h2>
-    <p style={{ color: "#8c8c8c", marginTop: 8 }}>준비 중입니다.</p>
-  </div>
-);
-
 // 로딩 스피너 (hydration 대기용)
 function AuthLoading() {
   return (
@@ -85,7 +77,8 @@ const router = createBrowserRouter([
     element: <PrivateRoute role="doctor"><DoctorLayout><DashboardPage /></DoctorLayout></PrivateRoute>,
   },
   {
-    path: "/doctor/record",
+    // recordId를 URL에 포함 — 새로고침·북마크·공유 가능 (state는 보조)
+    path: "/doctor/records/:recordId",
     element: <PrivateRoute role="doctor"><DoctorLayout><RecordDetailPage /></DoctorLayout></PrivateRoute>,
   },
   {

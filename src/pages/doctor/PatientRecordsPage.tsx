@@ -2,6 +2,7 @@ import useAuthStore from '../../store/authStore'
 ﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
 import { calcAge, patientLabel } from '../../utils/helpers';
+import { apiFetch } from '../../api/apiFetch';
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -111,7 +112,7 @@ export default function PatientRecordsPage() {
     if (!token) { navigate("/login"); return; }
 
     setLoading(true);
-    fetch(`${API}/api/v1/patients/${patientId}/records`, {
+    apiFetch(`${API}/api/v1/patients/${patientId}/records`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -283,7 +284,7 @@ export default function PatientRecordsPage() {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <button
-                        onClick={() => navigate("/doctor/record", {
+                        onClick={() => navigate(`/doctor/records/${row.record_id}`, {
                           state: { recordId: row.record_id, patientName, patientBirthDate: passedBirth, patientGender: passedGender },
                         })}
                         style={{

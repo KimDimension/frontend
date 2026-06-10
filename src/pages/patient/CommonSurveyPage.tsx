@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import client from '../../api/client'
+import { getMyRecords } from '../../api/records'
 
 const C = {
   primary:      'var(--capd-primary)',
@@ -219,7 +220,22 @@ function CommonQuestionItem({ question, answer, onChange }: {
 export default function CommonSurveyPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
-  const recordId: number | undefined = (location.state as { recordId?: number })?.recordId
+  const stateRecordId: number | undefined = (location.state as { recordId?: number })?.recordId
+  // state 없으면(새로고침·직접 진입) 오늘 기록을 API로 자동 조회하는 폴백
+  const [recordId, setRecordId] = useState<number | undefined>(stateRecordId)
+  const [resolving, setResolving] = useState<boolean>(!stateRecordId)
+
+  useEffect(() => {
+    if (recordId) return
+    getMyRecords()
+      .then(recs => {
+        const today = new Date().toLocaleDateString('sv-SE') // 로컬 YYYY-MM-DD
+        const todayRec = recs.find(r => r.record_date === today)
+        if (todayRec) setRecordId(todayRec.id)
+      })
+      .catch(() => { /* 무시 — 아래 guard에서 안내 */ })
+      .finally(() => setResolving(false))
+  }, [recordId])
 
   const [questions,  setQuestions]  = useState<CommonQuestion[]>([])
   const [answers,    setAnswers]    = useState<Record<number, Answer>>({})
@@ -347,7 +363,7 @@ export default function CommonSurveyPage() {
       </header>
 
       <main style={{ maxWidth: 680, margin: '0 auto', padding: '72px 16px 160px' }}>
-        {loading ? (
+        {(loading || resolving) ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <p style={{ color: C.textMuted, fontSize: 14 }}>⏳ 질문을 불러오는 중...</p>
           </div>

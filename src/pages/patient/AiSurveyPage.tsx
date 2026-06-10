@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import client from '../../api/client'
+import { getMyRecords } from '../../api/records'
 
 const C = {
   primary:      'var(--capd-primary)',
@@ -308,8 +309,23 @@ function AIQuestionItem({ question, answer, disabled, onChange }: {
 export default function AiSurveyPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
-  const recordId: number | undefined = (location.state as { recordId?: number; aiReset?: boolean })?.recordId
+  const stateRecordId: number | undefined = (location.state as { recordId?: number; aiReset?: boolean })?.recordId
   const aiReset: boolean = (location.state as { aiReset?: boolean })?.aiReset === true
+  // state 없으면(새로고침·직접 진입) 오늘 기록을 API로 자동 조회하는 폴백
+  const [recordId, setRecordId] = useState<number | undefined>(stateRecordId)
+  const [resolving, setResolving] = useState<boolean>(!stateRecordId)
+
+  useEffect(() => {
+    if (recordId) { setResolving(false); return }
+    getMyRecords()
+      .then(recs => {
+        const today = new Date().toLocaleDateString('sv-SE')
+        const todayRec = recs.find(r => r.record_date === today)
+        if (todayRec) setRecordId(todayRec.id)
+      })
+      .catch(() => { /* 무시 */ })
+      .finally(() => setResolving(false))
+  }, [recordId])
 
   const [questions,    setQuestions]    = useState<AIQuestion[]>([])
   const [answers,      setAnswers]      = useState<Record<number, Answer>>({})
@@ -496,7 +512,11 @@ export default function AiSurveyPage() {
             </div>
           </div>
         )}
-        {!recordId ? (
+        {resolving ? (
+          <div style={{ textAlign: 'center', paddingTop: 60 }}>
+            <p style={{ color: C.textMuted, fontSize: 14 }}>⏳ 기록 정보를 불러오는 중...</p>
+          </div>
+        ) : !recordId ? (
           <div style={{ textAlign: 'center', paddingTop: 60 }}>
             <p style={{ color: C.danger, fontSize: 14 }}>기록 정보가 없습니다.</p>
             <button onClick={() => navigate('/patient')} style={{

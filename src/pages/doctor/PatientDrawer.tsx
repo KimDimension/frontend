@@ -4,6 +4,7 @@ import { useToast } from '../../hooks/useToast'
 import { getHospitals, getDoctors } from '../../api/auth'
 import type { Hospital, DoctorSummary } from '../../types'
 import { formatPhone } from '../../utils/helpers'
+import { apiFetch } from '../../api/apiFetch'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -193,11 +194,11 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
     setLoading(true); setErr(''); setProfile(null); setTrend([])
     const t = token()
     Promise.all([
-      fetch(`${API}/api/v1/patients/${patientId}/profile`, { headers: { Authorization: `Bearer ${t}` } })
+      apiFetch(`${API}/api/v1/patients/${patientId}/profile`, { headers: { Authorization: `Bearer ${t}` } })
         .then(r => { if (!r.ok) throw new Error('프로필 오류'); return r.json() }),
-      fetch(`${API}/api/v1/patients/${patientId}/note`, { headers: { Authorization: `Bearer ${t}` } })
+      apiFetch(`${API}/api/v1/patients/${patientId}/note`, { headers: { Authorization: `Bearer ${t}` } })
         .then(r => { if (!r.ok) throw new Error('메모 오류'); return r.json() }),
-      fetch(`${API}/api/v1/patients/${patientId}/trend?days=14`, { headers: { Authorization: `Bearer ${t}` } })
+      apiFetch(`${API}/api/v1/patients/${patientId}/trend?days=14`, { headers: { Authorization: `Bearer ${t}` } })
         .then(r => r.ok ? r.json() : []),
     ])
       .then(([profileData, noteData, trendData]) => {
@@ -212,7 +213,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const handleSaveNote = async () => {
     setSaving(true)
     try {
-      const res = await fetch(`${API}/api/v1/patients/${patientId}/note`, {
+      const res = await apiFetch(`${API}/api/v1/patients/${patientId}/note`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: note }),
@@ -242,7 +243,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
     if (!window.confirm(`${profile?.name} 환자를 선택한 의사에게 인수인계하시겠습니까?\n이 작업은 즉시 적용됩니다.`)) return
     setHandoverLoading(true)
     try {
-      const res = await fetch(`${API}/api/v1/patients/${patientId}/handover`, {
+      const res = await apiFetch(`${API}/api/v1/patients/${patientId}/handover`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ new_doctor_id: handoverDoc }),
@@ -259,7 +260,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
     if (!window.confirm(`${profile.name} 환자의 담당을 해제하시겠습니까?\n\n담당 해제 후에는 이 환자가 기록을 제출할 수 없게 됩니다.`)) return
     setDischarging(true)
     try {
-      const res = await fetch(`${API}/api/v1/patients/${patientId}/discharge`, {
+      const res = await apiFetch(`${API}/api/v1/patients/${patientId}/discharge`, {
         method: 'POST', headers: { Authorization: `Bearer ${token()}` },
       })
       const data = await res.json()
@@ -275,7 +276,7 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
     const params = new URLSearchParams()
     if (pdfStart) params.set('start_date', pdfStart)
     if (pdfEnd)   params.set('end_date', pdfEnd)
-    const res = await fetch(`${API}/api/v1/patients/${patientId}/records-export?${params}`, {
+    const res = await apiFetch(`${API}/api/v1/patients/${patientId}/records-export?${params}`, {
       headers: { Authorization: `Bearer ${t}` },
     })
     if (!res.ok) { errToast.show('내보내기 실패'); return }
@@ -463,12 +464,21 @@ tr:nth-child(even) td{background:#f9fafb}
                 <div style={{ fontWeight: 800, fontSize: 16, color: C.text }}>{profile.name} 환자</div>
                 <div style={{ fontSize: 11, color: C.textMuted, marginTop: 1 }}>{profile.is_current_patient ? '현재 담당' : '과거 담당'}</div>
               </div>
-              <button
-                onClick={() => { onClose(); navigate(`/doctor/patients/${patientId}/records`, { state: { patientName: profile.name } }) }}
-                style={{ marginLeft: 'auto', background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-              >
-                기록 보기 →
-              </button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => { onClose(); navigate(`/doctor/patients/${patientId}`) }}
+                  style={{ background: '#fff', color: C.primary, border: `1px solid ${C.primary}`, borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                  title="환자 상세 페이지를 넓은 화면으로 보기"
+                >
+                  크게 보기
+                </button>
+                <button
+                  onClick={() => { onClose(); navigate(`/doctor/patients/${patientId}/records`, { state: { patientName: profile.name } }) }}
+                  style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                >
+                  기록 보기 →
+                </button>
+              </div>
             </>
           )}
         </div>

@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useParams } from "react-router";
 import { useToast } from "../../hooks/useToast";
+import { apiFetch } from "../../api/apiFetch";
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -295,7 +296,11 @@ function AiSummaryCard({ raw, patientLabel }: { raw: string; patientLabel: strin
 export default function RecordDetailPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { recordId, patientName, patientBirthDate, patientGender } = (location.state ?? {}) as { recordId?: number; patientName?: string; patientBirthDate?: string | null; patientGender?: string | null }
+  const params   = useParams<{ recordId?: string }>()
+  // recordId는 URL 파라미터 우선, 없으면 state 폴백 → 새로고침/직접 진입에도 동작
+  const stateData = (location.state ?? {}) as { recordId?: number; patientName?: string; patientBirthDate?: string | null; patientGender?: string | null }
+  const recordId = params.recordId ? Number(params.recordId) : stateData.recordId
+  const { patientBirthDate, patientGender } = stateData
   const calcAge = (b: string | null | undefined, ref?: string) => {
     if (!b) return null
     const refD  = ref ? new Date(ref + 'T00:00:00') : new Date()
@@ -332,7 +337,7 @@ export default function RecordDetailPage() {
     if (!recordId) return
     const token = localStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
-    fetch(`${API}/api/v1/records/${recordId}/detail`, {
+    apiFetch(`${API}/api/v1/records/${recordId}/detail`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
@@ -350,7 +355,7 @@ export default function RecordDetailPage() {
     const token = localStorage.getItem('access_token')
     setApproving(true)
     try {
-      const res = await fetch(`${API}/api/v1/records/${recordId}/approve`, {
+      const res = await apiFetch(`${API}/api/v1/records/${recordId}/approve`, {
         method: 'PATCH', headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) { const err = await res.json(); errToast.show(err.detail ?? '승인 실패'); return }
@@ -365,7 +370,7 @@ export default function RecordDetailPage() {
     const token = localStorage.getItem('access_token')
     setReverting(true)
     try {
-      const res = await fetch(`${API}/api/v1/records/${recordId}/revert`, {
+      const res = await apiFetch(`${API}/api/v1/records/${recordId}/revert`, {
         method: 'PATCH', headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) { const err = await res.json(); errToast.show(err.detail ?? '되돌리기 실패'); return }

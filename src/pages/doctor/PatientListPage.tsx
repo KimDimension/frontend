@@ -3,6 +3,7 @@ import useAuthStore from '../../store/authStore'
 import { useNavigate } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
 import { formatPhone, calcAge, patientLabel } from '../../utils/helpers';
+import { apiFetch } from '../../api/apiFetch';
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -153,7 +154,7 @@ export default function PatientListPage() {
     const token = localStorage.getItem('access_token')
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
-    fetch(`${API}/api/v1/patients/overview?scope=${sc}`, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(`${API}/api/v1/patients/overview?scope=${sc}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
         if (res.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return null }
         if (!res.ok) throw new Error('서버 오류')

@@ -3,6 +3,7 @@ import logoFull from '../../assets/logo_full.png';
 import { useLocation, useNavigate } from "react-router";
 import { logoutApi } from '../../api/auth';
 import useAuthStore from '../../store/authStore';
+import { apiFetch } from '../../api/apiFetch';
 
 const C = {
   primary:     'var(--capd-primary)',
@@ -65,7 +66,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
     const token = localStorage.getItem('access_token')
     if (!token) return
     try {
-      const res = await fetch(`${API}/api/v1/registration/doctor/pending`, {
+      const res = await apiFetch(`${API}/api/v1/registration/doctor/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {

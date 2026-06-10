@@ -1,4 +1,5 @@
 import useAuthStore from '../../store/authStore'
+import { apiFetch } from '../../api/apiFetch'
 ﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
@@ -450,7 +451,7 @@ export default function DashboardPage() {
     if (!token) { navigate('/login'); return }
     setLoading(true); setError('')
     const dp = toDateStr(targetDate)
-    fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (dRes) => {
         if (dRes.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return }
         if (!dRes.ok) throw new Error('서버 오류')
@@ -530,7 +531,7 @@ export default function DashboardPage() {
     if (!token) return
     setBulkApproving(true)
     try {
-      const res = await fetch(`${API}/api/v1/records/bulk-approve`, {
+      const res = await apiFetch(`${API}/api/v1/records/bulk-approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ record_ids: [...selectedIds] }),
@@ -672,7 +673,7 @@ export default function DashboardPage() {
             searchQuery={searchQuery}
             refDate={toDateStr(currentDate)}
             onCardClick={() => {
-              if (rec) navigate('/doctor/record', { state: { recordId: rec.record_id, patientName: p.name, patientBirthDate: p.birth_date, patientGender: p.gender } })
+              if (rec) navigate(`/doctor/records/${rec.record_id}`, { state: { recordId: rec.record_id, patientName: p.name, patientBirthDate: p.birth_date, patientGender: p.gender } })
             }}
             onNameClick={e => {
               e.stopPropagation()
@@ -740,7 +741,7 @@ export default function DashboardPage() {
                 onMouseEnter={() => setHoveredRow(p.id)}
                 onMouseLeave={() => setHoveredRow(null)}
                 onClick={() => {
-                  if (hasRecord) navigate('/doctor/record', { state: { recordId: rec!.record_id, patientName: p.name, patientBirthDate: p.birth_date, patientGender: p.gender } })
+                  if (hasRecord) navigate(`/doctor/records/${rec!.record_id}`, { state: { recordId: rec!.record_id, patientName: p.name, patientBirthDate: p.birth_date, patientGender: p.gender } })
                 }}
               >
                 <td style={{ padding: '12px 8px 12px 12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>

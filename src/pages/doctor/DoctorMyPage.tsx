@@ -3,6 +3,7 @@ import useAuthStore from '../../store/authStore'
 import { useNavigate } from 'react-router'
 import { useToast } from '../../hooks/useToast'
 import { formatPhone } from '../../utils/helpers'
+import { apiFetch } from '../../api/apiFetch'
 
 const API = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 const MOBILE_BP = 768
@@ -98,7 +99,7 @@ export default function DoctorMyPage() {
   }, [])
 
   useEffect(() => {
-    fetch(`${API}/api/v1/auth/me/profile`, {
+    apiFetch(`${API}/api/v1/auth/me/profile`, {
       headers: { Authorization: `Bearer ${token()}` },
     })
       .then(r => { if (r.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return null } return r.json() })
@@ -110,7 +111,7 @@ export default function DoctorMyPage() {
   }, [navigate])
 
   const patch = async (body: object) => {
-    const res = await fetch(`${API}/api/v1/auth/me`, {
+    const res = await apiFetch(`${API}/api/v1/auth/me`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
