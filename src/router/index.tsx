@@ -2,7 +2,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import useAuthStore from "../store/authStore";
 import LoginPage from "../pages/auth/LoginPage";
-import RegisterPage from "../pages/auth/RegisterPage";
 import DoctorRegisterPage from "../pages/auth/DoctorRegisterPage";
 import PatientRegisterPage from "../pages/auth/PatientRegisterPage";
 import { DoctorLayout } from "../pages/doctor/Layout";
@@ -58,11 +57,7 @@ const router = createBrowserRouter([
     path: "/login",
     element: <LoginPage />,
   },
-  // ── 회원가입 ───────────────────────────────────────────────────
-  {
-    path: "/register",
-    element: <RegisterPage />,
-  },
+  // ── 회원가입 (로그인 화면에서 역할별 가입으로 직행 — /register 역할선택 페이지는 미사용으로 제거) ──
   {
     path: "/register/doctor",
     element: <DoctorRegisterPage />,
