@@ -37,8 +37,10 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   const location = useLocation()
   const navigate  = useNavigate()
 
-  // 실제 로그인한 의사 이름을 sessionStorage에서 읽어 "OOO 선생님" 형식으로 표시
-  const storedName = sessionStorage.getItem('user_name') ?? ''
+  // 실제 로그인한 의사 이름을 authStore에서 구독해 "OOO 선생님" 형식으로 표시
+  // (authStore는 localStorage 기반 — sessionStorage에서 읽으면 항상 null 이었던 버그 수정)
+  const userName = useAuthStore(s => s.user?.name) ?? ''
+  const storedName = userName || (localStorage.getItem('user_name') ?? '')
   const displayName = doctorName ?? (storedName ? `${storedName} 선생님` : '선생님')
   const avatarChar = storedName ? storedName[0] : 'D'
 
@@ -58,7 +60,9 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
   }, [])
 
   const fetchPendingCount = useCallback(async () => {
-    const token = sessionStorage.getItem('access_token')
+    // authStore는 access_token을 localStorage에 저장 — sessionStorage에서 읽으면
+    // 항상 null이라 알림 배지·브라우저 알림이 통째로 죽어 있던 버그 수정
+    const token = localStorage.getItem('access_token')
     if (!token) return
     try {
       const res = await fetch(`${API}/api/v1/registration/doctor/pending`, {
