@@ -424,11 +424,7 @@ export default function DashboardPage() {
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState('')
   const [hoveredRow,    setHoveredRow]    = useState<number | null>(null)
-  const [currentDate,   setCurrentDate]   = useState<Date>(() => {
-    const saved = localStorage.getItem('dashboard_date')
-    if (saved) { const d = new Date(saved); if (!isNaN(d.getTime())) return d }
-    return new Date()
-  })
+  const [currentDate,   setCurrentDate]   = useState<Date>(new Date())
   const [searchQuery,   setSearchQuery]   = useState('')
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all')
   const [isMobile,      setIsMobile]      = useState(window.innerWidth < MOBILE_BP)
@@ -471,7 +467,7 @@ export default function DashboardPage() {
   /* ── 날짜 선택 ── */
   const handleSelectDate = (d: Date) => {
     setCurrentDate(d)
-    localStorage.setItem('dashboard_date', d.toISOString())
+    sessionStorage.setItem('dashboard_date', d.toISOString())
     setStatusFilter('all')
   }
 
