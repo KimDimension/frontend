@@ -1,3 +1,4 @@
+import useAuthStore from '../../store/authStore'
 ﻿import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
@@ -455,7 +456,7 @@ export default function DashboardPage() {
     const dp = toDateStr(targetDate)
     fetch(`${API}/api/v1/dashboard?record_date=${dp}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(async (dRes) => {
-        if (dRes.status === 401) { localStorage.clear(); navigate('/login'); return }
+        if (dRes.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return }
         if (!dRes.ok) throw new Error('서버 오류')
         const dData: DashboardStats = await dRes.json()
         setPatients(dData.patients)

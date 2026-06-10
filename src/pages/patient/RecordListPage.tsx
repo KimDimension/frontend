@@ -2,7 +2,8 @@
 import logoFull from '../../assets/logo_full.png'
 import { useNavigate } from 'react-router-dom'
 import { getMyRecords, DailyRecordResponse } from '../../api/records'
-import { getMe } from '../../api/auth'
+import { getMe, logoutApi } from '../../api/auth'
+import useAuthStore from '../../store/authStore'
 import client from '../../api/client'
 
 // ── 설문 응답 타입 ───────────────────────────────────────────────
@@ -467,7 +468,7 @@ export default function RecordListPage() {
             }}
           >{isNarrow ? '👤' : '👤 마이페이지'}</button>
           <button
-            onClick={() => { localStorage.clear(); navigate('/login') }}
+            onClick={async () => { try { await logoutApi() } catch {} useAuthStore.getState().logout(); navigate('/login') }}
             title="로그아웃"
             style={{
               background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',

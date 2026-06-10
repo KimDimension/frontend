@@ -336,7 +336,7 @@ export default function RecordDetailPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
-        if (res.status === 401) { localStorage.clear(); navigate('/login'); return null }
+        if (res.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return null }
         if (!res.ok) throw new Error('서버 오류')
         return res.json()
       })

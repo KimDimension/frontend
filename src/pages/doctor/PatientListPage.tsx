@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import useAuthStore from '../../store/authStore'
 import { useNavigate } from "react-router";
 import { PatientDrawer } from './PatientDrawer';
 import { formatPhone, calcAge, patientLabel } from '../../utils/helpers';
@@ -154,7 +155,7 @@ export default function PatientListPage() {
     setLoading(true); setError('')
     fetch(`${API}/api/v1/patients/overview?scope=${sc}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
-        if (res.status === 401) { localStorage.clear(); navigate('/login'); return null }
+        if (res.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return null }
         if (!res.ok) throw new Error('서버 오류')
         return res.json()
       })

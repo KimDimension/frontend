@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react'
+import useAuthStore from '../../store/authStore'
 import { useNavigate } from 'react-router'
 import { useToast } from '../../hooks/useToast'
 import { formatPhone, calcAge } from '../../utils/helpers'
@@ -124,7 +125,7 @@ export default function PatientMyPage() {
     fetch(`${API}/api/v1/auth/me/profile`, {
       headers: { Authorization: `Bearer ${token()}` },
     })
-      .then(r => { if (r.status === 401) { localStorage.clear(); navigate('/login'); return null } return r.json() })
+      .then(r => { if (r.status === 401) { useAuthStore.getState().logout(); navigate('/login'); return null } return r.json() })
       .then(d => {
         if (!d) return
         setProfile(d)
