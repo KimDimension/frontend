@@ -88,7 +88,7 @@ export function PatientManageActions({ patientId, patientName, isCurrentPatient,
   }
 
   return (
-    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* 인수인계 */}
       <div style={{ background: '#eff6ff', borderRadius: 12, border: '1px solid #bfdbfe', padding: '14px 18px' }}>
         <h3 style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: '#1d4ed8' }}>인수인계</h3>
