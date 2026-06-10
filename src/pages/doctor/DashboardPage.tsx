@@ -425,11 +425,7 @@ export default function DashboardPage() {
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState('')
   const [hoveredRow,    setHoveredRow]    = useState<number | null>(null)
-  const [currentDate,   setCurrentDate]   = useState<Date>(() => {
-    const saved = localStorage.getItem('dashboard_date')
-    if (saved) { const d = new Date(saved); if (!isNaN(d.getTime())) return d }
-    return new Date()
-  })
+  const [currentDate,   setCurrentDate]   = useState<Date>(new Date())
   const [searchQuery,   setSearchQuery]   = useState('')
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all')
   const [isMobile,      setIsMobile]      = useState(window.innerWidth < MOBILE_BP)
@@ -472,7 +468,7 @@ export default function DashboardPage() {
   /* ── 날짜 선택 ── */
   const handleSelectDate = (d: Date) => {
     setCurrentDate(d)
-    localStorage.setItem('dashboard_date', d.toISOString())
+    sessionStorage.setItem('dashboard_date', d.toISOString())
     setStatusFilter('all')
   }
 
@@ -793,8 +789,8 @@ export default function DashboardPage() {
         <div style={{ fontSize: isMobile ? 12 : 13, color: C.textMuted, marginTop: 3 }}>{formatDateKo(currentDate)}</div>
       </div>
 
-      {/* 모바일: 달력 맨 위 */}
-      {isMobile && (
+      {/* 모바일 or 중간 너비: 달력 맨 위 */}
+      {(isMobile || isNarrow) && (
         <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${C.border}`, padding: '14px', marginBottom: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
           <MiniCalendar selectedDate={currentDate} onSelect={handleSelectDate} />
         </div>
