@@ -191,7 +191,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
               borderBottom: `1px solid ${C.border}`,
             }}>
               <div onClick={() => navigate('/doctor')} style={{ cursor: 'pointer' }}>
-                <img src={logoIcon} alt="CAPD" style={{ height: 44, objectFit: 'contain' }} />
+                <img src={logoIcon} alt="CAPD" style={{ height: 44, objectFit: 'contain', mixBlendMode: 'multiply' }} />
               </div>
               <button
                 onClick={() => { desktopCollapsedRef.current = false; setOpen(true) }}
