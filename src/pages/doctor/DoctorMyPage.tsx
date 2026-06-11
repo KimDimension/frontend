@@ -27,6 +27,20 @@ const dim: React.CSSProperties = {
   flex: 1, padding: '0 8px 0 0', fontSize: 12, color: C.light, fontWeight: 400,
 }
 
+function PwToggle({ active, onClick }: { active: boolean; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', fontSize: 13, color: active || hovered ? '#534AB7' : '#6b7280', cursor: 'pointer', borderTop: '0.5px solid #e5e7eb' }}
+    >
+      비밀번호 변경
+    </div>
+  )
+}
+
 const card: React.CSSProperties = {
   background: '#fff', borderRadius: 16,
   border: `0.5px solid ${C.border}`, overflow: 'hidden', marginBottom: 14,
@@ -126,22 +140,17 @@ export default function DoctorMyPage() {
           </button>
         </div>
 
-        {/* 모든 행 — 항상 동일 위치 */}
-        <div style={row}><span style={lbl}>이름</span><span style={dim}>{profile.name} <span style={{ fontSize: 11 }}>(변경 불가)</span></span></div>
-        <div style={row}><span style={lbl}>생년월일</span><span style={dim}>{profile.birth_date ?? '—'} <span style={{ fontSize: 11 }}>(변경 불가)</span></span></div>
-        <div style={row}><span style={lbl}>자격번호</span><span style={dim}>{profile.license_number ?? '—'} <span style={{ fontSize: 11 }}>(변경 불가)</span></span></div>
-        <div style={row}><span style={lbl}>소속 병원</span><span style={dim}>{profile.hospital_name ?? '—'} <span style={{ fontSize: 11 }}>(변경 불가)</span></span></div>
-        <div style={row}><span style={lbl}>전화번호</span><span style={dim}>{formatPhone(profile.phone_number)} <span style={{ fontSize: 11 }}>(변경 불가)</span></span></div>
+        {/* 정보 행 */}
+        <div style={row}><span style={lbl}>이름</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.name}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>생년월일</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.birth_date ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>자격번호</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.license_number ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>소속 병원</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.hospital_name ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>전화번호</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{formatPhone(profile.phone_number)}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
 
         {/* 수정 모드에서만 아래쪽에 추가 */}
         {editMode && (
           <>
-            <div
-              onClick={() => setShowPwSection(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', fontSize: 13, color: showPwSection ? C.primary : C.muted, cursor: 'pointer', borderTop: `0.5px solid ${C.border}` }}
-            >
-              비밀번호 변경
-            </div>
+            <PwToggle active={showPwSection} onClick={() => setShowPwSection(v => !v)} />
             {showPwSection && (
               <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: `0.5px solid ${C.border}` }}>
                 <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="새 비밀번호 (6자 이상)"
