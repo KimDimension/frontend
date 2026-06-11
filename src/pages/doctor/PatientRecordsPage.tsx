@@ -170,11 +170,9 @@ export default function PatientRecordsPage() {
     </div>
   );
 
-  /* 그리드: 날짜 | 제출 시각 | 위험도 | 검토 상태 */
-  const COLS = isMobile ? '1fr 80px 80px' : '1fr 100px 80px 100px';
-  const HEADERS = isMobile
-    ? ['날짜', '위험도', '검토 상태']
-    : ['날짜', '제출 시각', '위험도', '검토 상태'];
+  /* 그리드: 날짜+제출시각 | 위험도 | 검토 상태 */
+  const COLS = '1fr 80px 100px';
+  const HEADERS = ['날짜 · 제출 시각', '위험도', '검토 상태'];
 
   return (
     <main style={{
@@ -297,7 +295,6 @@ export default function PatientRecordsPage() {
                     <span key={i} style={{
                       fontSize: 11, fontWeight: 700, color: C.textMuted,
                       letterSpacing: '0.02em',
-                      textAlign: i === 0 ? 'left' : 'center',
                     }}>{h}</span>
                   ))}
                 </div>
@@ -324,27 +321,18 @@ export default function PatientRecordsPage() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryLight)}
                       onMouseLeave={(e) => (e.currentTarget.style.background = idx % 2 === 0 ? C.white : C.bg)}
                     >
-                      {/* 날짜 + 제출시각 (데스크톱: 분리, 모바일: 날짜만) */}
+                      {/* 날짜 · 제출 시각 (같은 셀) */}
                       <div>
                         <div style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>
                           {formatDate(row.record_date)}
                         </div>
-                        {isMobile && (
-                          <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
-                            {formatTime(row.submitted_at)}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 제출 시각 (데스크톱만) */}
-                      {!isMobile && (
-                        <div style={{ textAlign: 'center', fontSize: 13, color: C.textMuted }}>
+                        <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
                           {formatTime(row.submitted_at)}
                         </div>
-                      )}
+                      </div>
 
                       {/* 위험도 */}
-                      <div style={{ textAlign: 'center' }}>
+                      <div>
                         {riskCfg
                           ? <Badge cfg={riskCfg} />
                           : <span style={{ fontSize: 12, color: C.textLight }}>—</span>
@@ -352,7 +340,7 @@ export default function PatientRecordsPage() {
                       </div>
 
                       {/* 검토 상태 */}
-                      <div style={{ textAlign: 'center' }}>
+                      <div>
                         <Badge cfg={statusCfg} />
                       </div>
                     </div>
