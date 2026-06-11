@@ -24,7 +24,7 @@ const lbl: React.CSSProperties = {
   width: 112, flexShrink: 0, padding: '0 16px', fontSize: 13, color: C.muted,
 }
 const dim: React.CSSProperties = {
-  flex: 1, padding: '0 8px 0 0', fontSize: 12, color: C.light, fontWeight: 400,
+  flex: 1, padding: '0 8px 0 0', fontSize: 13, color: C.light, fontWeight: 400,
 }
 
 function PwToggle({ active, onClick }: { active: boolean; onClick: () => void }) {
@@ -141,11 +141,11 @@ export default function DoctorMyPage() {
         </div>
 
         {/* 정보 행 */}
-        <div style={row}><span style={lbl}>이름</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.name}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
-        <div style={row}><span style={lbl}>생년월일</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.birth_date ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
-        <div style={row}><span style={lbl}>자격번호</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.license_number ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
-        <div style={row}><span style={lbl}>소속 병원</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{profile.hospital_name ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
-        <div style={row}><span style={lbl}>전화번호</span><span style={editMode ? dim : { ...dim, color: C.text, fontSize: 13, fontWeight: 500 }}>{formatPhone(profile.phone_number)}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>이름</span><span style={editMode ? dim : { ...dim, color: C.text, fontWeight: 500 }}>{profile.name}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>생년월일</span><span style={editMode ? dim : { ...dim, color: C.text, fontWeight: 500 }}>{profile.birth_date ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>자격번호</span><span style={editMode ? dim : { ...dim, color: C.text, fontWeight: 500 }}>{profile.license_number ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>소속 병원</span><span style={editMode ? dim : { ...dim, color: C.text, fontWeight: 500 }}>{profile.hospital_name ?? '—'}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
+        <div style={row}><span style={lbl}>전화번호</span><span style={editMode ? dim : { ...dim, color: C.text, fontWeight: 500 }}>{formatPhone(profile.phone_number)}{editMode && <span style={{ fontSize: 11 }}> (변경 불가)</span>}</span></div>
 
         {/* 수정 모드에서만 아래쪽에 추가 */}
         {editMode && (

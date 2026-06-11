@@ -33,7 +33,7 @@ const val: React.CSSProperties = {
   flex: 1, padding: '0 8px 0 0', fontSize: 13, color: C.text, fontWeight: 500,
 }
 const dim: React.CSSProperties = {
-  ...val, color: C.light, fontWeight: 400, fontSize: 12,
+  ...val, color: C.light, fontWeight: 400,
 }
 const inp: React.CSSProperties = {
   flex: 1, margin: '6px 8px 6px 0', padding: '6px 10px',
