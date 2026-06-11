@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import logoFull from '../../assets/logo_full.png';
+import logoIcon from '../../assets/logo_icon_only.png';
 import { useLocation, useNavigate } from "react-router";
 import { logoutApi } from '../../api/auth';
 import useAuthStore from '../../store/authStore';
@@ -190,7 +191,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
               borderBottom: `1px solid ${C.border}`,
             }}>
               <div onClick={() => navigate('/doctor')} style={{ cursor: 'pointer' }}>
-                <img src={logoFull} alt="CAPD" style={{ height: 44, objectFit: 'contain' }} />
+                <img src={logoIcon} alt="CAPD" style={{ height: 44, objectFit: 'contain' }} />
               </div>
               <button
                 onClick={() => { desktopCollapsedRef.current = false; setOpen(true) }}
