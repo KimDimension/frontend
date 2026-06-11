@@ -194,7 +194,7 @@ export default function PatientRecordsPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: C.text, margin: 0, letterSpacing: '-0.04em' }}>
-            {displayName} 환자
+            {patientName} 환자
           </h1>
           <p style={{ fontSize: 13, color: C.textMuted, margin: '3px 0 0' }}>
             전체 기록 {totalCount}건
@@ -221,13 +221,19 @@ export default function PatientRecordsPage() {
         background: C.white, borderRadius: 12, border: `0.5px solid ${C.border}`,
         padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
       }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: C.primary, flexShrink: 0 }}>
-          {patientName[0] ?? '?'}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: C.primary }}>
+            {patientName[0] ?? '?'}
+          </div>
+          {data && (
+            <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 500 }}>
+              #{String(data.patient_id).padStart(4, '0')}
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: isMobile ? 16 : 32, flexWrap: 'wrap' }}>
           {[
             { label: '이름',     value: patientName || '—' },
-            { label: '환자번호', value: data ? `#${String(data.patient_id).padStart(4, '0')}` : '—' },
             { label: '만 나이',  value: age !== null ? `만 ${age}세` : '—' },
             { label: '성별',     value: gender ?? '—' },
             { label: '생년월일', value: birthDate ?? '—' },
