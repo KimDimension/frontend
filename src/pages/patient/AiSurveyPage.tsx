@@ -42,6 +42,8 @@ interface AIQuestion {
   question_type: QuestionType
   options: string[] | null
   reason: string | null
+  existing_choice?: 'yes' | 'no' | null
+  existing_text_answer?: string | null
 }
 
 interface Answer {
@@ -355,10 +357,21 @@ export default function AiSurveyPage() {
           if (prev.some(p => p.question_id === q.question_id)) return prev
           return [...prev, q]
         })
-        setAnswers(prev => ({
-          ...prev,
-          [q.question_id]: prev[q.question_id] ?? emptyAnswer(),
-        }))
+        setAnswers(prev => {
+          if (prev[q.question_id]) return prev
+          // 기존 답변이 있으면 pre-fill
+          const qType = q.question_type ?? 'yes_no'
+          const existingText = q.existing_text_answer ?? ''
+          let initial: Answer = emptyAnswer()
+          if (qType === 'yes_no') {
+            initial = { choice: q.existing_choice ?? null, selected: [], text: existingText }
+          } else if (qType === 'single_select' || qType === 'multi_select') {
+            initial = { choice: null, selected: existingText ? existingText.split(',').map(s => s.trim()).filter(Boolean) : [], text: '' }
+          } else {
+            initial = { choice: null, selected: [], text: existingText }
+          }
+          return { ...prev, [q.question_id]: initial }
+        })
       } catch (e) {
         console.error('SSE 질문 파싱 실패:', e)
       }
