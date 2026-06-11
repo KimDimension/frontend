@@ -123,12 +123,12 @@ export default function DoctorMyPage() {
   if (err || !profile) return <div style={{ padding: 40, color: C.danger, fontSize: 14 }}>{err || '오류가 발생했습니다.'}</div>
 
   return (
-    <div style={{ padding: isMobile ? '16px' : '28px 32px', maxWidth: 560, fontFamily: "'Noto Sans KR', sans-serif" }}>
+    <div style={{ padding: isMobile ? '16px' : '28px 32px', fontFamily: "'Noto Sans KR', sans-serif" }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: C.text, letterSpacing: '-0.04em' }}>마이페이지</h1>
       </div>
 
-      <div style={card}>
+      <div style={{ ...card, maxWidth: 640, margin: '0 auto' }}>
         {/* 헤더 */}
         <div style={{ background: '#fafafa', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: `0.5px solid ${C.border}` }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 500, color: C.primary, flexShrink: 0 }}>
