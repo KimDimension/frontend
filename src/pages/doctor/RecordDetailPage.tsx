@@ -412,9 +412,9 @@ export default function RecordDetailPage() {
       <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: 12, marginBottom: 24 }}>
         <button
           onClick={() => navigate(-1)}
-          style={{ padding: '7px 14px', border: `1px solid ${C.border}`, borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, color: C.textMuted, fontFamily: 'inherit' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', border: `0.5px solid ${C.border}`, borderRadius: 20, background: 'transparent', cursor: 'pointer', fontSize: 12, color: C.textMuted, fontFamily: 'inherit' }}
         >
-          ← 목록
+          ← 목록으로
         </button>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: C.text, letterSpacing: '-0.03em' }}>
@@ -422,31 +422,35 @@ export default function RecordDetailPage() {
           </h1>
           <p style={{ margin: 0, fontSize: 12, color: C.textMuted, marginTop: 2 }}>제출 시간: {submitTime}</p>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           {isDraft ? (
-            <span style={{ background: '#f3f4f6', color: C.textMuted, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700 }}>
-              📝 기록 중
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f3f4f6', color: C.textMuted, border: `0.5px solid #e5e7eb`, borderRadius: 20, padding: '8px 16px', fontSize: 12, fontWeight: 500 }}>
+              기록 중
             </span>
           ) : isApproved ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{
-                background: C.successLight, color: C.success,
-                borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700,
-              }}>✅ 승인 완료</span>
+            <>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ECFDF5', color: '#059669', border: '0.5px solid #A7F3D0', borderRadius: 20, padding: '8px 16px', fontSize: 12, fontWeight: 500 }}>
+                승인 완료
+              </span>
               <button
                 onClick={handleRevert} disabled={reverting}
-                style={{ padding: '6px 14px', border: `1px solid ${C.border}`, borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 12, color: C.textMuted, fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '8px 14px', border: `0.5px solid ${C.border}`, borderRadius: 20, background: 'transparent', cursor: 'pointer', fontSize: 12, color: C.textMuted, fontFamily: 'inherit' }}
               >
                 {reverting ? '처리 중...' : '↩ 되돌리기'}
               </button>
-            </div>
+            </>
           ) : (
-            <button
-              onClick={handleApprove} disabled={approving}
-              style={{ padding: '10px 20px', background: C.success, color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: approving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: approving ? 0.7 : 1 }}
-            >
-              {approving ? '처리 중...' : '✅ 기록 승인'}
-            </button>
+            <>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FEF3C7', color: '#B45309', border: '0.5px solid #FDE68A', borderRadius: 20, padding: '8px 14px', fontSize: 12, fontWeight: 500 }}>
+                미검토
+              </span>
+              <button
+                onClick={handleApprove} disabled={approving}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#534AB7', color: '#fff', border: 'none', borderRadius: 22, fontSize: 13, fontWeight: 500, cursor: approving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: approving ? 0.7 : 1, boxShadow: '0 2px 8px #534AB730' }}
+              >
+                {approving ? '처리 중...' : '기록 승인'}
+              </button>
+            </>
           )}
         </div>
       </div>

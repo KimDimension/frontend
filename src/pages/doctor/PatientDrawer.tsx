@@ -466,13 +466,6 @@ tr:nth-child(even) td{background:#f9fafb}
               </div>
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button
-                  onClick={() => { onClose(); navigate(`/doctor/patients/${patientId}`) }}
-                  style={{ background: '#fff', color: C.primary, border: `1px solid ${C.primary}`, borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                  title="환자 상세 페이지를 넓은 화면으로 보기"
-                >
-                  크게 보기
-                </button>
-                <button
                   onClick={() => { onClose(); navigate(`/doctor/patients/${patientId}/records`, { state: { patientName: profile.name } }) }}
                   style={{ background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' }}
                 >
@@ -608,7 +601,7 @@ tr:nth-child(even) td{background:#f9fafb}
                   </div>
 
                   {/* 담당 해제 */}
-                  <div style={{ background: C.dangerLight, borderRadius: 12, border: '1px solid #fca5a5', padding: '14px 18px' }}>
+                  <div style={{ background: C.dangerLight, borderRadius: 12, border: '1px solid #fca5a5', padding: '14px 18px', marginTop: 16 }}>
                     <h3 style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 800, color: C.danger }}>담당 해제</h3>
                     <p style={{ margin: '0 0 12px', fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>
                       담당을 해제하면 이 환자는 기록을 제출할 수 없게 됩니다.<br />

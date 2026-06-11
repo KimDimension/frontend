@@ -175,7 +175,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
               borderBottom: `1px solid ${C.border}`,
             }}>
               <div onClick={() => navigate('/doctor')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <img src={logoFull} alt="CAPD" style={{ height: 28, objectFit: 'contain' }} />
+                <img src={logoFull} alt="CAPD" style={{ height: 56, objectFit: 'contain' }} />
               </div>
               <button
                 onClick={() => { desktopCollapsedRef.current = true; setOpen(false) }}
@@ -190,7 +190,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
               borderBottom: `1px solid ${C.border}`,
             }}>
               <div onClick={() => navigate('/doctor')} style={{ cursor: 'pointer' }}>
-                <img src={logoFull} alt="CAPD" style={{ height: 22, objectFit: 'contain' }} />
+                <img src={logoFull} alt="CAPD" style={{ height: 44, objectFit: 'contain' }} />
               </div>
               <button
                 onClick={() => { desktopCollapsedRef.current = false; setOpen(true) }}
@@ -301,7 +301,6 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
             alignItems: open ? 'flex-start' : 'center',
             gap: 6,
           }}>
-            {open && <div style={{ fontSize: 10, color: C.textLight }}>CAPD 관리 시스템 v1.0</div>}
             <div
               onClick={handleLogout}
               title={!open ? '로그아웃' : undefined}
@@ -355,7 +354,7 @@ export function DoctorLayout({ children, doctorName }: DoctorLayoutProps) {
           onClick={() => { navigate('/doctor'); setOpen(false) }}
           style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
         >
-          <img src={logoFull} alt="CAPD" style={{ height: 26, objectFit: 'contain' }} />
+          <img src={logoFull} alt="CAPD" style={{ height: 52, objectFit: 'contain' }} />
         </div>
 
         {/* 현재 페이지 이름 */}

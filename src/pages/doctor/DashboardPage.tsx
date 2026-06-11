@@ -126,15 +126,15 @@ const RISK = {
 
 /* ═══════════════ 뱃지 컴포넌트 ═══════════════ */
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; bg: string; color: string }> = {
-    draft:     { label: '기록 중',   bg: '#f3f4f6',      color: C.textMuted },
-    submitted: { label: '미검토',   bg: C.dangerLight,  color: C.danger  },
-    reviewed:  { label: '승인 완료', bg: C.successLight, color: C.success },
-    rejected:  { label: '반려',     bg: '#fef3f2',      color: '#b91c1c' },
+  const map: Record<string, { label: string; bg: string; color: string; border: string }> = {
+    draft:     { label: '기록 중',   bg: '#f3f4f6',  color: C.textMuted, border: '#e5e7eb' },
+    submitted: { label: '미검토',   bg: '#FEF3C7',  color: '#B45309',   border: '#FDE68A' },
+    reviewed:  { label: '승인 완료', bg: '#ECFDF5',  color: '#059669',   border: '#A7F3D0' },
+    rejected:  { label: '반려',     bg: '#FEF2F2',  color: '#DC2626',   border: '#FECACA' },
   }
-  const cfg = map[status] ?? { label: status, bg: '#f3f4f6', color: C.textMuted }
+  const cfg = map[status] ?? { label: status, bg: '#f3f4f6', color: C.textMuted, border: '#e5e7eb' }
   return (
-    <span style={{ background: cfg.bg, color: cfg.color, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 600 }}>
+    <span style={{ background: cfg.bg, color: cfg.color, border: `0.5px solid ${cfg.border}`, borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
       {cfg.label}
     </span>
   )
@@ -143,7 +143,7 @@ function RiskBadge({ level }: { level: 'urgent' | 'caution' | 'normal' | null })
   if (!level) return <span style={{ color: C.textLight, fontSize: 12 }}>—</span>
   const r = RISK[level]
   return (
-    <span style={{ background: r.bg, color: r.color, border: `1px solid ${r.border}`, borderRadius: 6, padding: '3px 8px', fontSize: 12, fontWeight: 600 }}>
+    <span style={{ background: r.bg, color: r.color, border: `0.5px solid ${r.border}`, borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}>
       {r.label}
     </span>
   )
@@ -711,7 +711,7 @@ export default function DashboardPage() {
                 />
               )}
             </th>
-            {['환자명', '환자번호', '전화번호', '상태', '위험도'].map((h, i) => (
+            {['환자명', '환자번호', '전화번호', '검토 상태', '위험도'].map((h, i) => (
               <th key={i} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.textMuted, whiteSpace: 'nowrap' }}>{h}</th>
             ))}
           </tr>

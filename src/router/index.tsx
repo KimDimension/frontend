@@ -9,7 +9,6 @@ import DashboardPage from "../pages/doctor/DashboardPage";
 import RecordDetailPage from "../pages/doctor/RecordDetailPage";
 import PatientRecordsPage from "../pages/doctor/PatientRecordsPage";
 import PatientListPage from "../pages/doctor/PatientListPage";
-import PatientDetailPage from "../pages/doctor/PatientDetailPage";
 import CommonQPage from "../pages/doctor/CommonQPage";
 import AIReviewPage from "../pages/doctor/AIReviewPage";
 import PatientApprovalPage from "../pages/doctor/PatientApprovalPage";
@@ -79,10 +78,6 @@ const router = createBrowserRouter([
   {
     path: "/doctor/patients",
     element: <PrivateRoute role="doctor"><DoctorLayout><PatientListPage /></DoctorLayout></PrivateRoute>,
-  },
-  {
-    path: "/doctor/patients/:patientId",
-    element: <PrivateRoute role="doctor"><DoctorLayout><PatientDetailPage /></DoctorLayout></PrivateRoute>,
   },
   {
     path: "/doctor/patients/:patientId/records",

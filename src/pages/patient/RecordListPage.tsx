@@ -451,7 +451,7 @@ export default function RecordListPage() {
           onClick={() => navigate('/patient')}
           style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0 }}
         >
-          <img src={logoFull} alt="CAPD" style={{ height: 28, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+          <img src={logoFull} alt="CAPD" style={{ height: 56, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
         </div>
         {/* 중앙 이름 — flex:1로 남은 공간 차지, overflow 방지 */}
         <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden', padding: '0 8px' }}>
