@@ -1,5 +1,5 @@
 import useAuthStore from '../../store/authStore'
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
 import { calcAge, patientLabel } from '../../utils/helpers';
 import { apiFetch } from '../../api/apiFetch';
@@ -31,12 +31,19 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string; bor
   draft:     { label: "기록 중",   color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' },
 }
 
+const RISK_CFG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  urgent:  { label: "긴급", color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  caution: { label: "주의", color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  normal:  { label: "정상", color: '#059669', bg: '#f0fdf4', border: '#a7f3d0' },
+}
+
 /* ── 타입 ─────────────────────────────────────────────── */
 interface PatientRecordRow {
   record_id:    number;
   record_date:  string;
   submitted_at: string | null;
   status:       string;
+  risk_level:   string | null;
 }
 
 interface PatientRecordsResponse {
@@ -45,16 +52,15 @@ interface PatientRecordsResponse {
   records:      PatientRecordRow[];
 }
 
-/* ── 상태 배지 ────────────────────────────────────────── */
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_CFG[status] ?? { label: status, color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' };
+/* ── 배지 ────────────────────────────────────────────── */
+function Badge({ cfg }: { cfg: { label: string; color: string; bg: string; border: string } }) {
   return (
     <span style={{
       fontSize: 11, fontWeight: 500, padding: '4px 10px', borderRadius: 20,
-      color: s.color, background: s.bg, border: `0.5px solid ${s.border}`,
+      color: cfg.color, background: cfg.bg, border: `0.5px solid ${cfg.border}`,
       display: 'inline-block', whiteSpace: 'nowrap',
     }}>
-      {s.label}
+      {cfg.label}
     </span>
   );
 }
@@ -85,8 +91,6 @@ function monthLabel(key: string) {
   const [yyyy, mm] = key.split("-");
   return `${yyyy}년 ${parseInt(mm, 10)}월`;
 }
-
-/* ── 나이/성별 포맷 ───────────────────────────────────── */
 
 /* ── 메인 ─────────────────────────────────────────────── */
 export default function PatientRecordsPage() {
@@ -147,10 +151,13 @@ export default function PatientRecordsPage() {
     });
   };
 
-  const patientName  = data?.patient_name ?? passedName;
-  const displayName  = patientLabel(patientName, passedBirth, passedGender);
-  const totalCount   = data?.records.length ?? 0;
-  const grouped      = data ? groupByMonth(data.records) : new Map();
+  const patientName = data?.patient_name ?? passedName;
+  const displayName = patientLabel(patientName, passedBirth, passedGender);
+  const totalCount  = data?.records.length ?? 0;
+  const grouped     = data ? groupByMonth(data.records) : new Map();
+
+  const age    = passedBirth ? calcAge(passedBirth) : null;
+  const gender = passedGender === 'male' ? '남성' : passedGender === 'female' ? '여성' : null;
 
   if (loading) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, color: C.textMuted, fontSize: 13 }}>
@@ -162,6 +169,12 @@ export default function PatientRecordsPage() {
       오류: {error}
     </div>
   );
+
+  /* 그리드: 날짜 | 제출 시각 | 위험도 | 검토 상태 */
+  const COLS = isMobile ? '1fr 80px 80px' : '1fr 100px 80px 100px';
+  const HEADERS = isMobile
+    ? ['날짜', '위험도', '검토 상태']
+    : ['날짜', '제출 시각', '위험도', '검토 상태'];
 
   return (
     <main style={{
@@ -194,6 +207,29 @@ export default function PatientRecordsPage() {
         >
           ← 뒤로
         </button>
+      </div>
+
+      {/* ── 환자 정보 카드 ── */}
+      <div style={{
+        background: C.white, borderRadius: 12, border: `0.5px solid ${C.border}`,
+        padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+      }}>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 600, color: C.primary, flexShrink: 0 }}>
+          {patientName[0] ?? '?'}
+        </div>
+        <div style={{ display: 'flex', gap: isMobile ? 16 : 32, flexWrap: 'wrap' }}>
+          {[
+            { label: '이름',     value: patientName || '—' },
+            { label: '나이',     value: age !== null ? `만 ${age}세` : '—' },
+            { label: '성별',     value: gender ?? '—' },
+            { label: '생년월일', value: passedBirth ?? '—' },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 2 }}>{label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{value}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── 기록 없음 ── */}
@@ -234,7 +270,7 @@ export default function PatientRecordsPage() {
               <span style={{ fontSize: 14, fontWeight: 700, color: isOpen ? C.primaryDark : C.text }}>
                 {monthLabel(monthKey)}
               </span>
-              <span style={{ fontSize: 12, color: C.textMuted, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{
                   background: isOpen ? C.primary : '#e5e7eb',
                   color: isOpen ? C.white : C.textMuted,
@@ -252,60 +288,76 @@ export default function PatientRecordsPage() {
               <div>
                 {/* 테이블 헤더 */}
                 <div style={{
-                  display: 'grid', gridTemplateColumns: '1fr 120px 110px 100px',
+                  display: 'grid', gridTemplateColumns: COLS,
                   padding: '8px 20px',
                   background: C.bg,
                   borderBottom: `1px solid ${C.border}`,
                 }}>
-                  {['날짜', '제출 시간', '상태', ''].map((h, i) => (
+                  {HEADERS.map((h, i) => (
                     <span key={i} style={{
                       fontSize: 11, fontWeight: 700, color: C.textMuted,
-                      textTransform: 'uppercase', letterSpacing: '0.04em',
-                      textAlign: i >= 2 ? 'center' : 'left',
+                      letterSpacing: '0.02em',
+                      textAlign: i === 0 ? 'left' : 'center',
                     }}>{h}</span>
                   ))}
                 </div>
 
                 {/* 행 */}
-                {rows.map((row, idx) => (
-                  <div key={row.record_id} style={{
-                    display: 'grid', gridTemplateColumns: '1fr 120px 110px 100px',
-                    padding: '12px 20px',
-                    background: idx % 2 === 0 ? C.white : C.bg,
-                    borderBottom: idx < rows.length - 1 ? `1px solid ${C.border}` : 'none',
-                    alignItems: 'center',
-                    transition: 'background 0.1s',
-                  }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryLight)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = idx % 2 === 0 ? C.white : C.bg)}
-                  >
-                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>
-                      {formatDate(row.record_date)}
-                    </span>
-                    <span style={{ fontSize: 13, color: C.textMuted, textAlign: 'center' }}>
-                      {formatTime(row.submitted_at)}
-                    </span>
-                    <div style={{ textAlign: 'center' }}>
-                      <StatusBadge status={row.status} />
+                {rows.map((row, idx) => {
+                  const riskCfg = row.risk_level ? RISK_CFG[row.risk_level] : null;
+                  const statusCfg = STATUS_CFG[row.status] ?? { label: row.status, color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' };
+                  return (
+                    <div
+                      key={row.record_id}
+                      onClick={() => navigate(`/doctor/records/${row.record_id}`, {
+                        state: { recordId: row.record_id, patientName, patientBirthDate: passedBirth, patientGender: passedGender },
+                      })}
+                      style={{
+                        display: 'grid', gridTemplateColumns: COLS,
+                        padding: '12px 20px',
+                        background: idx % 2 === 0 ? C.white : C.bg,
+                        borderBottom: idx < rows.length - 1 ? `1px solid ${C.border}` : 'none',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryLight)}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = idx % 2 === 0 ? C.white : C.bg)}
+                    >
+                      {/* 날짜 + 제출시각 (데스크톱: 분리, 모바일: 날짜만) */}
+                      <div>
+                        <div style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>
+                          {formatDate(row.record_date)}
+                        </div>
+                        {isMobile && (
+                          <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                            {formatTime(row.submitted_at)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 제출 시각 (데스크톱만) */}
+                      {!isMobile && (
+                        <div style={{ textAlign: 'center', fontSize: 13, color: C.textMuted }}>
+                          {formatTime(row.submitted_at)}
+                        </div>
+                      )}
+
+                      {/* 위험도 */}
+                      <div style={{ textAlign: 'center' }}>
+                        {riskCfg
+                          ? <Badge cfg={riskCfg} />
+                          : <span style={{ fontSize: 12, color: C.textLight }}>—</span>
+                        }
+                      </div>
+
+                      {/* 검토 상태 */}
+                      <div style={{ textAlign: 'center' }}>
+                        <Badge cfg={statusCfg} />
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <button
-                        onClick={() => navigate(`/doctor/records/${row.record_id}`, {
-                          state: { recordId: row.record_id, patientName, patientBirthDate: passedBirth, patientGender: passedGender },
-                        })}
-                        style={{
-                          padding: "6px 14px", borderRadius: 8, border: "none",
-                          background: C.primary, color: C.white,
-                          fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryDark)}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = C.primary)}
-                      >
-                        상세 보기
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
