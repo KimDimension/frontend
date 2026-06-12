@@ -353,7 +353,7 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:15px
 .risk-card.none{background:#f3f4f6;color:#6b7280}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
 .chart-box{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa}
-.chart-label{font-size:13px;font-weight:700;color:#6b7280;margin-bottom:6px;letter-spacing:.3px}
+.chart-label{font-size:17px;font-weight:700;color:#6b7280;margin-bottom:10px;letter-spacing:.3px}
 canvas{display:block}
 table{width:100%;border-collapse:collapse}
 th{background:#f3f4f6;padding:8px 10px;text-align:left;font-size:14px;font-weight:700;border:1px solid #e5e7eb}
@@ -464,7 +464,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 // ─── 평균선 레이블 플러그인 ────────────────────────────────
 function _drawAvgLabel(ctx, text, x, y, color, align) {
   ctx.save();
-  ctx.font = 'bold 10px Apple SD Gothic Neo,Malgun Gothic,sans-serif';
+  ctx.font = 'bold 14px Apple SD Gothic Neo,Malgun Gothic,sans-serif';
   var tw = ctx.measureText(text).width;
   var ph=4, pv=3, r=4;
   var bx = align==='right' ? x-tw-ph*2 : x;
@@ -512,11 +512,11 @@ window.addEventListener('load', function() {
       x: {
         type: 'time',
         time: { unit: 'day', displayFormats: { day: 'M/d' } },
-        ticks: { font: { size: 11 }, maxRotation: 60, autoSkip: false },
+        ticks: { font: { size: 15 }, maxRotation: 60, autoSkip: false },
         grid: { display: false }
       },
       y: {
-        ticks: { font: { size: 12 } },
+        ticks: { font: { size: 15 } },
         grid: { color: '#f0f0f0' }
       }
     },
@@ -529,7 +529,7 @@ window.addEventListener('load', function() {
 
     // 컨테이너 실제 너비로 캔버스 픽셀 크기 고정
     var W = canvas.parentNode.clientWidth || 520;
-    var H = 220;
+    var H = 440;
     canvas.width  = W;
     canvas.height = H;
     canvas.style.width  = W + 'px';
