@@ -354,7 +354,7 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:15px
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
 .chart-box{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa}
 .chart-label{font-size:13px;font-weight:700;color:#6b7280;margin-bottom:6px;letter-spacing:.3px}
-canvas{width:100%!important;height:200px!important}
+canvas{display:block}
 table{width:100%;border-collapse:collapse}
 th{background:#f3f4f6;padding:8px 10px;text-align:left;font-size:14px;font-weight:700;border:1px solid #e5e7eb}
 td{padding:8px 10px;border:1px solid #e5e7eb;font-size:14px;vertical-align:top}
@@ -371,7 +371,7 @@ tr:nth-child(even) td{background:#f9fafb}
   .print-bar{display:none}
   .charts{grid-template-columns:1fr 1fr}
   .chart-box{break-inside:avoid}
-  .chart-img{width:100%!important;height:200px!important}
+  .chart-box img{max-width:100%;height:auto!important}
   @page{size:A4;margin:15mm}
 }
 </style>
@@ -445,102 +445,68 @@ tr:nth-child(even) td{background:#f9fafb}
 <div class="footer">내보내기: ${new Date().toLocaleString('ko-KR')}</div>
 
 <script>
-(function() {
-  var data = ${chartDataJson};
-  var labels = data.labels;
+// ─── 데이터 ────────────────────────────────────────────────
+var _chartData = ${chartDataJson};
 
-  // 평균값을 배경 박스와 함께 오른쪽 끝 + 왼쪽 Y축에 표기
-  // roundRect 폴리필 (구형 브라우저 / 프린트 엔진 대비)
-  if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-      r = Math.min(r, w/2, h/2);
-      this.beginPath();
-      this.moveTo(x+r, y);
-      this.lineTo(x+w-r, y);
-      this.arcTo(x+w, y, x+w, y+r, r);
-      this.lineTo(x+w, y+h-r);
-      this.arcTo(x+w, y+h, x+w-r, y+h, r);
-      this.lineTo(x+r, y+h);
-      this.arcTo(x, y+h, x, y+h-r, r);
-      this.lineTo(x, y+r);
-      this.arcTo(x, y, x+r, y, r);
-      this.closePath();
-      return this;
-    };
-  }
-
-  function drawLabel(ctx, text, x, y, color, align) {
-    ctx.save();
-    ctx.font = 'bold 10.5px Apple SD Gothic Neo, Malgun Gothic, sans-serif';
-    var w = ctx.measureText(text).width;
-    var ph = 3, pv = 2;
-    var bx = align === 'right' ? x - w - ph : x + ph;
-    var by = y - 7 - pv;
-    // 흰 배경 + 색 테두리 pill
-    ctx.beginPath();
-    ctx.roundRect(bx - ph, by - pv, w + ph * 2, 14 + pv * 2, 4);
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.fill();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    // 텍스트
-    ctx.fillStyle = color;
-    ctx.textAlign = align;
-    ctx.textBaseline = 'top';
-    ctx.fillText(text, align === 'right' ? x - ph : x + ph, by);
-    ctx.restore();
-  }
-
-  var avgLabelPlugin = {
-    id: 'avgLabel',
-    afterDraw: function(chart) {
-      var ctx = chart.ctx;
-      chart.data.datasets.forEach(function(ds, i) {
-        if (!ds._isAvg || !ds.data.length) return;
-        var meta = chart.getDatasetMeta(i);
-        if (meta.hidden) return;
-        var yVal = ds.data[0].y;
-        var yPixel = chart.scales.y.getPixelForValue(yVal);
-        var xLeft  = chart.chartArea.left;
-        var xRight = chart.chartArea.right;
-        // 오른쪽: "평균 69.3"
-        drawLabel(ctx, '평균 ' + yVal.toFixed(1), xRight - 4, yPixel, ds.borderColor, 'right');
-        // 왼쪽 Y축: 수치만
-        drawLabel(ctx, yVal.toFixed(1), xLeft + 4, yPixel, ds.borderColor, 'left');
-      });
-    }
+// ─── roundRect 폴리필 ──────────────────────────────────────
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    this.beginPath();
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y);
+    this.arcTo(x+w,y,x+w,y+r,r); this.lineTo(x+w,y+h-r);
+    this.arcTo(x+w,y+h,x+w-r,y+h,r); this.lineTo(x+r,y+h);
+    this.arcTo(x,y+h,x,y+h-r,r); this.lineTo(x,y+r);
+    this.arcTo(x,y,x+r,y,r); this.closePath(); return this;
   };
-  Chart.register(avgLabelPlugin);
+}
+
+// ─── 평균선 레이블 플러그인 ────────────────────────────────
+function _drawAvgLabel(ctx, text, x, y, color, align) {
+  ctx.save();
+  ctx.font = 'bold 10px Apple SD Gothic Neo,Malgun Gothic,sans-serif';
+  var tw = ctx.measureText(text).width;
+  var ph=4, pv=3, r=4;
+  var bx = align==='right' ? x-tw-ph*2 : x;
+  var by = y - 7 - pv;
+  ctx.beginPath(); ctx.roundRect(bx,by,tw+ph*2,13+pv*2,r);
+  ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.fill();
+  ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle=color;
+  ctx.textAlign = align==='right' ? 'right' : 'left';
+  ctx.textBaseline='middle';
+  ctx.fillText(text, align==='right' ? x-ph : x+ph, by+7+pv);
+  ctx.restore();
+}
+Chart.register({
+  id:'avgLabel',
+  afterDraw: function(chart){
+    var ctx=chart.ctx;
+    chart.data.datasets.forEach(function(ds,i){
+      if(!ds._isAvg||!ds.data.length) return;
+      if(chart.getDatasetMeta(i).hidden) return;
+      var yVal=ds.data[0].y;
+      var yPx=chart.scales.y.getPixelForValue(yVal);
+      var xL=chart.chartArea.left, xR=chart.chartArea.right;
+      _drawAvgLabel(ctx,'평균 '+yVal.toFixed(1),xR-2,yPx,ds.borderColor,'right');
+      _drawAvgLabel(ctx,yVal.toFixed(1),xL+2,yPx,ds.borderColor,'left');
+    });
+  }
+});
+
+// ─── 차트 생성 → 즉시 PNG 교체 ────────────────────────────
+// window.load 이후 실행 → CDN 스크립트 완전 로드 보장
+// animation:false → new Chart() 반환 시점에 이미 그려짐
+// replaceChild → 캔버스가 DOM에서 완전 제거 → print 왜곡 원천 차단
+window.addEventListener('load', function() {
+  var labels = _chartData.labels;
 
   var commonOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+    responsive: false,   // ← 핵심: 브라우저/프린터 리사이즈 무시
+    animation: false,    // ← 즉시 렌더, 타이밍 이슈 없음
     plugins: {
       legend: { display: false },
-      tooltip: {
-        enabled: true,
-        mode: 'index',
-        intersect: false,
-        bodyFont: { size: 12 },
-        titleFont: { size: 12 },
-        filter: function(item) { return !item.dataset._isAvg; },
-        callbacks: {
-          title: function(items) {
-            if (!items.length) return '';
-            var d = new Date(items[0].parsed.x);
-            var y = d.getFullYear();
-            var m = String(d.getMonth() + 1).padStart(2, '0');
-            var day = String(d.getDate()).padStart(2, '0');
-            return y + '-' + m + '-' + day;
-          },
-          label: function(item) {
-            var unit = item.dataset._unit || '';
-            return item.dataset.label + ': ' + item.parsed.y + unit;
-          }
-        }
-      }
+      tooltip: { enabled: false }  // 정적 문서 — 툴팁 불필요
     },
     scales: {
       x: {
@@ -554,79 +520,55 @@ tr:nth-child(even) td{background:#f9fafb}
         grid: { color: '#f0f0f0' }
       }
     },
-    elements: { point: { radius: 4, hitRadius: 12, hoverRadius: 6 }, line: { tension: 0 } }
+    elements: { point: { radius: 4 }, line: { tension: 0 } }
   };
 
   function mkChart(id, label, vals, color, unit) {
-    var points = labels.map(function(d, i) {
-      return (vals[i] !== null && vals[i] !== undefined) ? { x: d, y: vals[i] } : null;
-    }).filter(Boolean);
+    var canvas = document.getElementById(id);
+    if (!canvas) return;
 
-    var sum = points.reduce(function(a, p) { return a + p.y; }, 0);
-    var avg = points.length ? sum / points.length : null;
+    // 컨테이너 실제 너비로 캔버스 픽셀 크기 고정
+    var W = canvas.parentNode.clientWidth || 520;
+    var H = 220;
+    canvas.width  = W;
+    canvas.height = H;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+
+    var points = labels.map(function(d,i){
+      return (vals[i]!==null&&vals[i]!==undefined) ? {x:d,y:vals[i]} : null;
+    }).filter(Boolean);
+    var avg = points.length ? points.reduce(function(a,p){return a+p.y;},0)/points.length : null;
 
     var datasets = [{
-      label: label,
-      data: points,
-      borderColor: color,
-      backgroundColor: 'transparent',
-      fill: false,
-      spanGaps: false,
-      borderWidth: 2,
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      _unit: unit,
-      _isAvg: false
+      label: label, data: points,
+      borderColor: color, backgroundColor:'transparent',
+      fill: false, spanGaps: false, borderWidth: 2,
+      pointRadius: 4, _unit: unit, _isAvg: false
     }];
-
     if (avg !== null) {
       datasets.push({
-        label: '',
-        data: labels.map(function(d) { return { x: d, y: avg }; }),
-        borderColor: color,
-        borderWidth: 1.5,
-        borderDash: [6, 4],
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        fill: false,
-        spanGaps: true,
-        _isAvg: true,
-        _unit: unit
+        label:'', data: labels.map(function(d){return {x:d,y:avg};}),
+        borderColor: color, borderWidth: 1.5, borderDash: [6,4],
+        pointRadius: 0, fill: false, spanGaps: true, _isAvg: true, _unit: unit
       });
     }
 
-    new Chart(document.getElementById(id), {
-      type: 'line',
-      data: { datasets: datasets },
-      options: commonOpts
-    });
+    // 차트 그리기 (animation:false → 이 줄에서 즉시 완료)
+    new Chart(canvas, { type:'line', data:{datasets:datasets}, options:commonOpts });
+
+    // 캔버스 → PNG img 로 즉시 교체 (DOM에서 캔버스 제거)
+    var img = new Image();
+    img.src = canvas.toDataURL('image/png');
+    img.style.cssText = 'display:block;width:'+W+'px;height:'+H+'px;max-width:100%';
+    canvas.parentNode.replaceChild(img, canvas);
   }
 
-  mkChart('chartWeight',  '체중',     data.weights,  '#7c3aed', 'kg');
-  mkChart('chartBP',      '수축기혈압', data.systolic, '#dc2626', 'mmHg');
-  mkChart('chartUF',      '제수량',   data.uf,       '#2563eb', 'mL');
-  mkChart('chartGlucose', '공복혈당', data.glucose,  '#d97706', 'mg/dL');
-
-  // 차트 렌더 완료 후 캔버스 → PNG 이미지 변환 (프린트 깨짐 완전 방지)
-  setTimeout(function() {
-    document.querySelectorAll('canvas').forEach(function(canvas) {
-      var img = document.createElement('img');
-      img.src = canvas.toDataURL('image/png');
-      img.style.cssText = 'width:100%;height:200px;display:none;object-fit:fill';
-      img.className = 'chart-img';
-      canvas.parentNode.insertBefore(img, canvas.nextSibling);
-    });
-  }, 900);
-
-  window.addEventListener('beforeprint', function() {
-    document.querySelectorAll('canvas').forEach(function(c) { c.style.display = 'none'; });
-    document.querySelectorAll('.chart-img').forEach(function(img) { img.style.display = 'block'; });
-  });
-  window.addEventListener('afterprint', function() {
-    document.querySelectorAll('canvas').forEach(function(c) { c.style.display = 'block'; });
-    document.querySelectorAll('.chart-img').forEach(function(img) { img.style.display = 'none'; });
-  });
-})();
+  mkChart('chartWeight',  '체중',     _chartData.weights,  '#7c3aed', 'kg');
+  mkChart('chartBP',      '수축기혈압', _chartData.systolic, '#dc2626', 'mmHg');
+  mkChart('chartUF',      '제수량',   _chartData.uf,       '#2563eb', 'mL');
+  mkChart('chartGlucose', '공복혈당', _chartData.glucose,  '#d97706', 'mg/dL');
+});
 <\/script>
 </body></html>`
 
