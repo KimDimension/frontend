@@ -438,18 +438,58 @@ tr:nth-child(even) td{background:#f9fafb}
   var data = ${chartDataJson};
   var labels = data.labels;
 
+  // 평균값을 점선 오른쪽 끝에 텍스트로 표기하는 플러그인
+  var avgLabelPlugin = {
+    id: 'avgLabel',
+    afterDraw: function(chart) {
+      var ctx = chart.ctx;
+      chart.data.datasets.forEach(function(ds, i) {
+        if (!ds._isAvg || !ds.data.length) return;
+        var meta = chart.getDatasetMeta(i);
+        if (meta.hidden) return;
+        var yVal = ds.data[0].y;
+        var yPixel = chart.scales.y.getPixelForValue(yVal);
+        var xRight = chart.chartArea.right;
+        ctx.save();
+        ctx.font = 'bold 11px Apple SD Gothic Neo, Malgun Gothic, sans-serif';
+        ctx.fillStyle = ds.borderColor;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('평균 ' + yVal.toFixed(1) + ds._unit, xRight - 2, yPixel - 2);
+        ctx.restore();
+      });
+    }
+  };
+  Chart.register(avgLabelPlugin);
+
   var commonOpts = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
-      legend: {
-        display: true,
-        labels: { font: { size: 12 }, boxWidth: 16, padding: 8,
-          filter: function(item) { return item.text !== ''; } }
-      },
-      tooltip: { enabled: true, mode: 'index', intersect: false,
-        bodyFont: { size: 12 }, titleFont: { size: 12 } }
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+        bodyFont: { size: 12 },
+        titleFont: { size: 12 },
+        filter: function(item) { return !item.dataset._isAvg; },
+        callbacks: {
+          title: function(items) {
+            if (!items.length) return '';
+            var d = new Date(items[0].parsed.x);
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+          },
+          label: function(item) {
+            var unit = item.dataset._unit || '';
+            return item.dataset.label + ': ' + item.parsed.y + unit;
+          }
+        }
+      }
     },
     scales: {
       x: {
@@ -466,7 +506,7 @@ tr:nth-child(even) td{background:#f9fafb}
     elements: { point: { radius: 4, hitRadius: 12, hoverRadius: 6 }, line: { tension: 0 } }
   };
 
-  function mkChart(id, label, vals, color) {
+  function mkChart(id, label, vals, color, unit) {
     var points = labels.map(function(d, i) {
       return (vals[i] !== null && vals[i] !== undefined) ? { x: d, y: vals[i] } : null;
     }).filter(Boolean);
@@ -483,13 +523,14 @@ tr:nth-child(even) td{background:#f9fafb}
       spanGaps: false,
       borderWidth: 2,
       pointRadius: 4,
-      pointHoverRadius: 7
+      pointHoverRadius: 7,
+      _unit: unit,
+      _isAvg: false
     }];
 
     if (avg !== null) {
-      var avgLabel = '평균 ' + avg.toFixed(1);
       datasets.push({
-        label: avgLabel,
+        label: '',
         data: labels.map(function(d) { return { x: d, y: avg }; }),
         borderColor: color,
         borderWidth: 1.5,
@@ -498,7 +539,8 @@ tr:nth-child(even) td{background:#f9fafb}
         pointHoverRadius: 0,
         fill: false,
         spanGaps: true,
-        tooltip: { enabled: false }
+        _isAvg: true,
+        _unit: unit
       });
     }
 
@@ -509,10 +551,10 @@ tr:nth-child(even) td{background:#f9fafb}
     });
   }
 
-  mkChart('chartWeight',  '체중',     data.weights,  '#7c3aed');
-  mkChart('chartBP',      '수축기혈압', data.systolic, '#dc2626');
-  mkChart('chartUF',      '제수량',   data.uf,       '#2563eb');
-  mkChart('chartGlucose', '공복혈당', data.glucose,  '#d97706');
+  mkChart('chartWeight',  '체중',     data.weights,  '#7c3aed', 'kg');
+  mkChart('chartBP',      '수축기혈압', data.systolic, '#dc2626', 'mmHg');
+  mkChart('chartUF',      '제수량',   data.uf,       '#2563eb', 'mL');
+  mkChart('chartGlucose', '공복혈당', data.glucose,  '#d97706', 'mg/dL');
 })();
 <\/script>
 </body></html>`
