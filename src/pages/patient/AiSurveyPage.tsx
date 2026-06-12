@@ -426,7 +426,10 @@ export default function AiSurveyPage() {
     const qType = q.question_type ?? 'yes_no'
     if (!a) return false
     if (qType === 'yes_no') return a.choice !== null
-    if (qType === 'single_select' || qType === 'multi_select') return a.selected.length > 0
+    if (qType === 'single_select' || qType === 'multi_select') {
+      const hasOptions = q.options && q.options.length > 0
+      return hasOptions ? a.selected.length > 0 : a.text.trim() !== ''
+    }
     if (qType === 'short_text') return a.text.trim() !== ''
     return false
   })
@@ -447,7 +450,8 @@ export default function AiSurveyPage() {
         choice = a.choice
         text   = a.text
       } else if (qType === 'single_select' || qType === 'multi_select') {
-        text = a.selected.join(', ')
+        const hasOptions = q.options && q.options.length > 0
+        text = hasOptions ? a.selected.join(', ') : a.text
       } else {
         text = a.text
       }
