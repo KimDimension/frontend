@@ -179,9 +179,10 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
   const [discharging, setDischarging] = useState(false)
   const [err,         setErr]         = useState('')
   const [trend,       setTrend]       = useState<TrendPoint[]>([])
-  const [showPdf,     setShowPdf]     = useState(false)
-  const [pdfStart,    setPdfStart]    = useState('')
-  const [pdfEnd,      setPdfEnd]      = useState('')
+  const [showPdf,          setShowPdf]          = useState(false)
+  const [pdfStart,         setPdfStart]         = useState('')
+  const [pdfEnd,           setPdfEnd]           = useState('')
+  const [lastReportEndDate, setLastReportEndDate] = useState<string | null>(null)
   // 인수인계
   const [showHandover,    setShowHandover]    = useState(false)
   const [handoverHospitals, setHandoverHospitals] = useState<Hospital[]>([])
@@ -205,7 +206,12 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
       .then(([profileData, noteData, trendData]) => {
         setProfile(profileData)
         const c = noteData.content ?? ''; setNote(c); setOrigNote(c)
+        setLastReportEndDate(noteData.last_report_end_date ?? null)
         setTrend(trendData)
+        // 기본 날짜: 종료=오늘, 시작=환자 가입일
+        const today = new Date().toISOString().slice(0, 10)
+        setPdfEnd(today)
+        if (profileData.joined_at) setPdfStart(profileData.joined_at.slice(0, 10))
       })
       .catch(e => setErr(e.message))
       .finally(() => setLoading(false))
@@ -280,8 +286,18 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
     const res = await apiFetch(`${API}/api/v1/patients/${patientId}/records-export?${params}`, {
       headers: { Authorization: `Bearer ${t}` },
     })
-    if (!res.ok) { errToast.show('내보내기 실패'); return }
+    if (!res.ok) { errToast.show('요약지 생성 실패'); return }
     const d = await res.json()
+
+    // 요약지 생성 날짜 서버에 저장
+    const saveEnd = pdfEnd || new Date().toISOString().slice(0, 10)
+    apiFetch(`${API}/api/v1/patients/${patientId}/report-end-date`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ end_date: saveEnd }),
+    }).then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.last_report_end_date) setLastReportEndDate(data.last_report_end_date) })
+      .catch(() => {})
 
     const labels   = d.records.map((r: any) => r.record_date)
     const weights  = d.records.map((r: any) => r.weight ?? null)
@@ -343,13 +359,21 @@ tr:nth-child(even) td{background:#f9fafb}
 .risk-주의{color:#d97706;font-weight:700}
 .risk-정상{color:#16a34a}
 .footer{margin-top:16px;color:#9ca3af;font-size:13px;text-align:right}
+.print-bar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 0 10px;margin-bottom:20px;display:flex;gap:8px;align-items:center}
+.print-btn{background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.print-btn:hover{background:#6d28d9}
 @media print{
   body{margin:12px 16px}
+  .print-bar{display:none}
   .charts{grid-template-columns:1fr 1fr 1fr}
   @page{size:A4;margin:15mm}
 }
 </style>
 </head><body>
+<div class="print-bar">
+  <button class="print-btn" onclick="window.print()">🖨️ PDF 내보내기</button>
+  <span style="color:#6b7280;font-size:13px">미리보기 — 인쇄하거나 PDF로 저장하세요</span>
+</div>
 <h1>CAPD 일일 기록 요약지</h1>
 <div class="subtitle">${d.patient.name} 환자</div>
 <div class="info">
@@ -437,7 +461,6 @@ tr:nth-child(even) td{background:#f9fafb}
   mkChart('chartBP',      '수축기혈압', data.systolic, '#dc2626');
   mkChart('chartUF',      '제수량',   data.uf,       '#2563eb');
   mkChart('chartGlucose', '공복혈당', data.glucose,  '#d97706');
-  setTimeout(function(){ window.print(); }, 800);
 })();
 <\/script>
 </body></html>`
@@ -487,9 +510,9 @@ tr:nth-child(even) td{background:#f9fafb}
                   <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: C.text }}>기본 정보</h3>
                   <button
                     onClick={() => setShowPdf(v => !v)}
-                    style={{ background: showPdf ? C.primary : '#f3f4f6', color: showPdf ? '#fff' : C.textMuted, border: 'none', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}
+                    style={{ background: showPdf ? C.primary : C.primaryLight, color: showPdf ? '#fff' : C.primary, border: `1.5px solid ${C.primary}`, borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }}
                   >
-                    📄 PDF
+                    📋 기간별 요약
                   </button>
                 </div>
                 <InfoRow label="이름"     value={profile.name} />
@@ -499,18 +522,39 @@ tr:nth-child(even) td{background:#f9fafb}
                 <InfoRow label="담당 의사" value={profile.doctor_name} />
                 <InfoRow label="가입일"   value={profile.joined_at ? formatDate(profile.joined_at) : null} />
                 {showPdf && (
-                  <div style={{ marginTop: 12, padding: '12px', background: '#fff', borderRadius: 10, border: `1px solid ${C.border}` }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 8 }}>기록 기간 선택</div>
+                  <div style={{ marginTop: 12, padding: '14px', background: '#faf5ff', borderRadius: 10, border: `1.5px solid ${C.primary}22` }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>기록 기간 선택</div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <input type="date" value={pdfStart} onChange={e => setPdfStart(e.target.value)}
-                        style={{ flex: 1, minWidth: 120, padding: '6px 8px', borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 12, fontFamily: 'inherit', color: C.text, outline: 'none' }} />
-                      <span style={{ fontSize: 11, color: C.textMuted }}>~</span>
+                        style={{ flex: 1, minWidth: 120, padding: '7px 9px', borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: 'inherit', color: C.text, outline: 'none', background: '#fff' }} />
+                      <span style={{ fontSize: 12, color: C.textMuted }}>~</span>
                       <input type="date" value={pdfEnd} onChange={e => setPdfEnd(e.target.value)}
-                        style={{ flex: 1, minWidth: 120, padding: '6px 8px', borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 12, fontFamily: 'inherit', color: C.text, outline: 'none' }} />
+                        style={{ flex: 1, minWidth: 120, padding: '7px 9px', borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 13, fontFamily: 'inherit', color: C.text, outline: 'none', background: '#fff' }} />
                     </div>
+                    {lastReportEndDate && (() => {
+                      // 마지막 생성 end_date 다음날 계산
+                      const next = new Date(lastReportEndDate)
+                      next.setDate(next.getDate() + 1)
+                      const nextStr = next.toISOString().slice(0, 10)
+                      const today = new Date().toISOString().slice(0, 10)
+                      if (nextStr > today) return null
+                      return (
+                        <button
+                          onClick={() => { setPdfStart(nextStr); setPdfEnd(today) }}
+                          style={{ marginTop: 8, background: 'none', border: `1px solid ${C.primary}`, color: C.primary, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          ↩ 이어서 ({nextStr} ~ {today})
+                        </button>
+                      )
+                    })()}
+                    {lastReportEndDate && (
+                      <div style={{ marginTop: 6, fontSize: 11, color: C.textMuted }}>
+                        마지막 요약지 생성: ~{lastReportEndDate}
+                      </div>
+                    )}
                     <button onClick={handleExportPdf}
-                      style={{ marginTop: 10, width: '100%', background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      📄 PDF 내보내기
+                      style={{ marginTop: 12, width: '100%', background: C.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      📋 요약지 생성
                     </button>
                   </div>
                 )}
