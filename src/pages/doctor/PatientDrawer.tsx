@@ -365,7 +365,7 @@ tr:nth-child(even) td{background:#f9fafb}
 @media print{
   body{margin:12px 16px}
   .print-bar{display:none}
-  .charts{grid-template-columns:1fr 1fr 1fr}
+  .charts{grid-template-columns:1fr 1fr}
   @page{size:A4;margin:15mm}
 }
 </style>
