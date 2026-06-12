@@ -32,9 +32,9 @@ const STATUS_CFG: Record<string, { label: string; icon: string; color: string; b
 }
 
 const RISK_CFG: Record<string, { label: string; icon: string; color: string; bg: string; border: string }> = {
-  urgent:  { label: "긴급", icon: '🔴', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-  caution: { label: "주의", icon: '🟠', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  normal:  { label: "정상", icon: '🟢', color: '#059669', bg: '#f0fdf4', border: '#a7f3d0' },
+  urgent:  { label: "긴급", icon: '🚨', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  caution: { label: "주의", icon: '⚠️', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  normal:  { label: "정상", icon: '✓',  color: '#059669', bg: '#f0fdf4', border: '#a7f3d0' },
 }
 
 /* ── 타입 ─────────────────────────────────────────────── */
