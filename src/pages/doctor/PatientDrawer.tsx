@@ -444,15 +444,15 @@ tr:nth-child(even) td{background:#f9fafb}
       x: { ticks: { font: { size: 9 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false } },
       y: { ticks: { font: { size: 9 } }, grid: { color: '#f0f0f0' } }
     },
-    elements: { point: { radius: 3, hitRadius: 5 }, line: { tension: 0.3 } }
+    elements: { point: { radius: 3, hitRadius: 5 }, line: { tension: 0 } }
   };
   function mkChart(id, label, vals, color) {
     new Chart(document.getElementById(id), {
       type: 'line',
       data: {
         labels: labels,
-        datasets: [{ label: label, data: vals, borderColor: color, backgroundColor: color + '22',
-          fill: true, spanGaps: true, borderWidth: 2 }]
+        datasets: [{ label: label, data: vals, borderColor: color, backgroundColor: color,
+          fill: false, spanGaps: true, borderWidth: 2 }]
       },
       options: commonOpts
     });
