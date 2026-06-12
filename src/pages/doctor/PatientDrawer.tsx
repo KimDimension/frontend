@@ -336,13 +336,12 @@ export function PatientDrawer({ patientId, onClose, onDischarge, navigate }: {
 <style>
 *{box-sizing:border-box}
 body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:15px;color:#1a1a2e;margin:28px 32px}
-.header-block{background:linear-gradient(135deg,#3b0764 0%,#6d28d9 100%);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:24px}
-.header-block .doc-label{font-size:12px;font-weight:600;letter-spacing:1.5px;opacity:.75;margin-bottom:6px;text-transform:uppercase}
-.header-block h1{font-size:24px;font-weight:900;margin:0 0 4px;color:#fff;letter-spacing:-.02em}
-.header-block .patient-name{font-size:18px;font-weight:700;color:#e9d5ff;margin-bottom:14px}
+.header-block{background:#f8f9fa;border:1px solid #e5e7eb;border-left:5px solid #6b7280;border-radius:8px;padding:18px 22px;margin-bottom:24px}
+.header-block .doc-label{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#9ca3af;margin-bottom:8px;text-transform:uppercase}
+.header-block h1{font-size:24px;font-weight:900;margin:0 0 12px;color:#111827;letter-spacing:-.02em}
 .header-block .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
-.header-block .info-item{font-size:13px;color:rgba(255,255,255,.82);line-height:1.7}
-.header-block .info-item span{font-weight:700;color:#fff}
+.header-block .info-item{font-size:13px;color:#6b7280;line-height:1.8}
+.header-block .info-item span{font-weight:700;color:#1f2937}
 .section-title{font-size:16px;font-weight:800;color:#1a1a2e;margin:24px 0 12px;border-bottom:2px solid #e5e7eb;padding-bottom:4px}
 .risk-summary{display:flex;gap:12px;margin-bottom:20px}
 .risk-card{flex:1;border-radius:8px;padding:10px 14px;text-align:center}
@@ -372,7 +371,7 @@ tr:nth-child(even) td{background:#f9fafb}
   .print-bar{display:none}
   .charts{grid-template-columns:1fr 1fr}
   .chart-box{break-inside:avoid}
-  canvas{width:100%!important;height:200px!important;max-height:200px!important}
+  .chart-img{width:100%!important;height:200px!important}
   @page{size:A4;margin:15mm}
 }
 </style>
@@ -450,7 +449,49 @@ tr:nth-child(even) td{background:#f9fafb}
   var data = ${chartDataJson};
   var labels = data.labels;
 
-  // 평균값을 점선 오른쪽 끝 + 왼쪽 Y축에 색깔로 표기하는 플러그인
+  // 평균값을 배경 박스와 함께 오른쪽 끝 + 왼쪽 Y축에 표기
+  // roundRect 폴리필 (구형 브라우저 / 프린트 엔진 대비)
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      r = Math.min(r, w/2, h/2);
+      this.beginPath();
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.arcTo(x+w, y, x+w, y+r, r);
+      this.lineTo(x+w, y+h-r);
+      this.arcTo(x+w, y+h, x+w-r, y+h, r);
+      this.lineTo(x+r, y+h);
+      this.arcTo(x, y+h, x, y+h-r, r);
+      this.lineTo(x, y+r);
+      this.arcTo(x, y, x+r, y, r);
+      this.closePath();
+      return this;
+    };
+  }
+
+  function drawLabel(ctx, text, x, y, color, align) {
+    ctx.save();
+    ctx.font = 'bold 10.5px Apple SD Gothic Neo, Malgun Gothic, sans-serif';
+    var w = ctx.measureText(text).width;
+    var ph = 3, pv = 2;
+    var bx = align === 'right' ? x - w - ph : x + ph;
+    var by = y - 7 - pv;
+    // 흰 배경 + 색 테두리 pill
+    ctx.beginPath();
+    ctx.roundRect(bx - ph, by - pv, w + ph * 2, 14 + pv * 2, 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // 텍스트
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'top';
+    ctx.fillText(text, align === 'right' ? x - ph : x + ph, by);
+    ctx.restore();
+  }
+
   var avgLabelPlugin = {
     id: 'avgLabel',
     afterDraw: function(chart) {
@@ -463,18 +504,10 @@ tr:nth-child(even) td{background:#f9fafb}
         var yPixel = chart.scales.y.getPixelForValue(yVal);
         var xLeft  = chart.chartArea.left;
         var xRight = chart.chartArea.right;
-        ctx.save();
-        ctx.font = 'bold 11px Apple SD Gothic Neo, Malgun Gothic, sans-serif';
-        ctx.fillStyle = ds.borderColor;
-        // 오른쪽 끝 레이블
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText('평균 ' + yVal.toFixed(1), xRight - 2, yPixel - 2);
-        // 왼쪽 Y축 레이블
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(yVal.toFixed(1), xLeft - 4, yPixel);
-        ctx.restore();
+        // 오른쪽: "평균 69.3"
+        drawLabel(ctx, '평균 ' + yVal.toFixed(1), xRight - 4, yPixel, ds.borderColor, 'right');
+        // 왼쪽 Y축: 수치만
+        drawLabel(ctx, yVal.toFixed(1), xLeft + 4, yPixel, ds.borderColor, 'left');
       });
     }
   };
@@ -574,18 +607,24 @@ tr:nth-child(even) td{background:#f9fafb}
   mkChart('chartUF',      '제수량',   data.uf,       '#2563eb', 'mL');
   mkChart('chartGlucose', '공복혈당', data.glucose,  '#d97706', 'mg/dL');
 
-  // 프린트 시 Chart.js 캔버스 비율 깨짐 방지
-  window.addEventListener('beforeprint', function() {
-    Object.values(Chart.instances).forEach(function(chart) {
-      chart.canvas.style.height = '200px';
-      chart.canvas.height = 200;
-      chart.resize(chart.canvas.offsetWidth, 200);
+  // 차트 렌더 완료 후 캔버스 → PNG 이미지 변환 (프린트 깨짐 완전 방지)
+  setTimeout(function() {
+    document.querySelectorAll('canvas').forEach(function(canvas) {
+      var img = document.createElement('img');
+      img.src = canvas.toDataURL('image/png');
+      img.style.cssText = 'width:100%;height:200px;display:none;object-fit:fill';
+      img.className = 'chart-img';
+      canvas.parentNode.insertBefore(img, canvas.nextSibling);
     });
+  }, 900);
+
+  window.addEventListener('beforeprint', function() {
+    document.querySelectorAll('canvas').forEach(function(c) { c.style.display = 'none'; });
+    document.querySelectorAll('.chart-img').forEach(function(img) { img.style.display = 'block'; });
   });
   window.addEventListener('afterprint', function() {
-    Object.values(Chart.instances).forEach(function(chart) {
-      chart.resize();
-    });
+    document.querySelectorAll('canvas').forEach(function(c) { c.style.display = 'block'; });
+    document.querySelectorAll('.chart-img').forEach(function(img) { img.style.display = 'none'; });
   });
 })();
 <\/script>
