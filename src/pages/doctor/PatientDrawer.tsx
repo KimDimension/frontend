@@ -355,6 +355,7 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:15px
 .chart-box{border:1px solid #e5e7eb;border-radius:8px;padding:12px;background:#fafafa}
 .chart-label{font-size:17px;font-weight:700;color:#6b7280;margin-bottom:10px;letter-spacing:.3px}
 canvas{display:block}
+.chart-print-img{display:none}
 table{width:100%;border-collapse:collapse}
 th{background:#f3f4f6;padding:8px 10px;text-align:left;font-size:14px;font-weight:700;border:1px solid #e5e7eb}
 td{padding:8px 10px;border:1px solid #e5e7eb;font-size:14px;vertical-align:top}
@@ -371,7 +372,8 @@ tr:nth-child(even) td{background:#f9fafb}
   .print-bar{display:none}
   .charts{grid-template-columns:1fr 1fr}
   .chart-box{break-inside:avoid}
-  .chart-box img{max-width:100%;height:auto!important}
+  canvas{display:none!important}
+  .chart-print-img{display:block!important;max-width:100%;height:auto!important}
   @page{size:A4;margin:15mm}
 }
 </style>
@@ -502,11 +504,28 @@ window.addEventListener('load', function() {
   var labels = _chartData.labels;
 
   var commonOpts = {
-    responsive: false,   // ← 핵심: 브라우저/프린터 리사이즈 무시
-    animation: false,    // ← 즉시 렌더, 타이밍 이슈 없음
+    responsive: false,
+    animation: false,
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: false }  // 정적 문서 — 툴팁 불필요
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+        bodyFont: { size: 13 },
+        titleFont: { size: 13 },
+        filter: function(item) { return !item.dataset._isAvg; },
+        callbacks: {
+          title: function(items) {
+            if (!items.length) return '';
+            var d = new Date(items[0].parsed.x);
+            return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+          },
+          label: function(item) {
+            return item.dataset.label+': '+item.parsed.y+(item.dataset._unit||'');
+          }
+        }
+      }
     },
     scales: {
       x: {
@@ -557,11 +576,12 @@ window.addEventListener('load', function() {
     // 차트 그리기 (animation:false → 이 줄에서 즉시 완료)
     new Chart(canvas, { type:'line', data:{datasets:datasets}, options:commonOpts });
 
-    // 캔버스 → PNG img 로 즉시 교체 (DOM에서 캔버스 제거)
+    // PNG는 프린트 전용으로 별도 생성 (캔버스는 화면에서 그대로 유지)
     var img = new Image();
     img.src = canvas.toDataURL('image/png');
-    img.style.cssText = 'display:block;width:'+W+'px;height:'+H+'px;max-width:100%';
-    canvas.parentNode.replaceChild(img, canvas);
+    img.className = 'chart-print-img';
+    img.style.cssText = 'width:'+W+'px;height:'+H+'px;max-width:100%';
+    canvas.parentNode.insertBefore(img, canvas.nextSibling);
   }
 
   mkChart('chartWeight',  '체중',     _chartData.weights,  '#7c3aed', 'kg');
